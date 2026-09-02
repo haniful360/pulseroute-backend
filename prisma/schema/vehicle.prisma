@@ -1,0 +1,35 @@
+model Vehicle {
+  id                 String                    @id @default(uuid())
+  driverId           String
+  driver             Driver                    @relation("DriverOwnedVehicles", fields: [driverId], references: [id], onDelete: Cascade)
+  activeDriver       Driver?                   @relation("CurrentDriverVehicle")
+  ambulanceType      AmbulanceType
+  vehicleNumber      String                    @unique
+  model              String?
+  manufacturer       String?
+  year               Int?
+  hasOxygen          Boolean                   @default(true)
+  hasVentilator      Boolean                   @default(false)
+  hasDefibrillator   Boolean                   @default(false)
+  hasSuctionMachine  Boolean                   @default(false)
+  equipmentDetails   String?
+  verificationStatus VehicleVerificationStatus @default(PENDING)
+  verifiedAt         DateTime?
+  verifiedById       String?
+  verifiedBy         User?                     @relation("VehicleVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  rejectionReason    String?
+  isActive           Boolean                   @default(true)
+  isDeleted          Boolean                   @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  trips Trip[]
+
+  @@index([driverId], name: "idx_vehicle_driverId")
+  @@index([vehicleNumber], name: "idx_vehicle_number")
+  @@index([ambulanceType], name: "idx_vehicle_type")
+  @@index([verificationStatus], name: "idx_vehicle_verification")
+  @@index([isDeleted], name: "idx_vehicle_isDeleted")
+  @@map("vehicles")
+}

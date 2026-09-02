@@ -1,0 +1,87 @@
+model Trip {
+  id                    String            @id @default(uuid(7))
+  tripCode              String            @unique
+  patientId             String
+  patient               Patient           @relation(fields: [patientId], references: [id])
+  driverId              String?
+  driver                Driver?           @relation(fields: [driverId], references: [id])
+  vehicleId             String?
+  vehicle               Vehicle?          @relation(fields: [vehicleId], references: [id])
+  ambulanceType         AmbulanceType
+  status                TripStatus        @default(REQUESTED)
+  emergencySeverity     EmergencySeverity @default(HIGH)
+  pickupAddress         String
+  pickupLatitude        Float
+  pickupLongitude       Float
+  destinationAddress    String?
+  destinationLatitude   Float?
+  destinationLongitude  Float?
+  distanceKm            Float?
+  estimatedDurationMins Float?
+  estimatedFare         Decimal?          @db.Decimal(10, 2)
+  patientNotes          String?
+  cancellationReason    String?
+  cancelledById         String?
+  cancelledByRole       Role?
+  requestedAt           DateTime          @default(now())
+  acceptedAt            DateTime?
+  enRouteAt             DateTime?
+  arrivedAt             DateTime?
+  inTransitAt           DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  version               Int               @default(1)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  // Relations
+  dispatchOffers     DispatchOffer[]
+  statusLogs         TripStatusLog[]
+  locationLogs       DriverLocationLog[]
+  invoice            Invoice?
+  review             Review?
+  walletTransactions WalletTransaction[]
+
+  @@index([patientId], name: "idx_trip_patientId")
+  @@index([driverId], name: "idx_trip_driverId")
+  @@index([vehicleId], name: "idx_trip_vehicleId")
+  @@index([status], name: "idx_trip_status")
+  @@index([ambulanceType], name: "idx_trip_ambulanceType")
+  @@index([pickupLatitude, pickupLongitude], name: "idx_trip_pickup_location")
+  @@index([requestedAt], name: "idx_trip_requestedAt")
+  @@map("trips")
+}
+
+model DispatchOffer {
+  id                   String      @id @default(uuid())
+  tripId               String
+  trip                 Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  driverId             String
+  driver               Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  status               OfferStatus @default(PENDING)
+  distanceToPickupKm   Float?
+  estimatedArrivalMins Float?
+  expiresAt            DateTime
+  respondedAt          DateTime?
+  createdAt            DateTime    @default(now())
+
+  @@unique([tripId, driverId], name: "idx_offer_trip_driver")
+  @@index([driverId, status], name: "idx_offer_driver_status")
+  @@index([expiresAt], name: "idx_offer_expiresAt")
+  @@map("dispatch_offers")
+}
+
+model TripStatusLog {
+  id          String     @id @default(uuid())
+  tripId      String
+  trip        Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  status      TripStatus
+  latitude    Float?
+  longitude   Float?
+  notes       String?
+  changedById String?
+  createdAt   DateTime   @default(now())
+
+  @@index([tripId], name: "idx_status_log_tripId")
+  @@map("trip_status_logs")
+}

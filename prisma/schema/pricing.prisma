@@ -1,0 +1,18 @@
+model PricingConfig {
+  id                       String        @id @default(uuid())
+  ambulanceType            AmbulanceType @unique
+  baseFare                 Decimal       @db.Decimal(10, 2)
+  perKmRate                Decimal       @db.Decimal(10, 2)
+  perMinuteRate            Decimal       @default(0.00) @db.Decimal(10, 2)
+  platformCommissionRate   Float         @default(0.12) // 10% - 15% commission rate configured by admin
+  nightSurgeMultiplier     Float         @default(1.00)
+  emergencySurgeMultiplier Float         @default(1.00)
+  minFare                  Decimal       @db.Decimal(10, 2)
+  cancellationFee          Decimal       @default(0.00) @db.Decimal(10, 2)
+  isActive                 Boolean       @default(true)
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+
+  @@index([ambulanceType], name: "idx_pricing_ambulanceType")
+  @@map("pricing_configs")
+}

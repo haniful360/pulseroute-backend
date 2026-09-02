@@ -1,0 +1,18 @@
+model Review {
+  id        String   @id @default(uuid())
+  tripId    String   @unique
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId], name: "idx_review_patientId")
+  @@index([driverId], name: "idx_review_driverId")
+  @@index([rating], name: "idx_review_rating")
+  @@map("reviews")
+}

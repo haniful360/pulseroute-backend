@@ -1,0 +1,54 @@
+model Invoice {
+  id                 String        @id @default(uuid())
+  invoiceNumber      String        @unique
+  tripId             String        @unique
+  trip               Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  patientId          String
+  patient            Patient       @relation(fields: [patientId], references: [id])
+  driverId           String
+  driver             Driver        @relation(fields: [driverId], references: [id])
+  baseFare           Decimal       @db.Decimal(10, 2)
+  distanceFare       Decimal       @db.Decimal(10, 2)
+  surgeFare          Decimal       @default(0.00) @db.Decimal(10, 2)
+  discountAmount     Decimal       @default(0.00) @db.Decimal(10, 2)
+  taxAmount          Decimal       @default(0.00) @db.Decimal(10, 2)
+  totalAmount        Decimal       @db.Decimal(10, 2)
+  platformCommission Decimal       @db.Decimal(10, 2)
+  driverEarning      Decimal       @db.Decimal(10, 2)
+  paymentStatus      PaymentStatus @default(UNPAID)
+  paymentMethod      PaymentMethod @default(CASH)
+  paidAmount         Decimal       @default(0.00) @db.Decimal(10, 2)
+  issuedAt           DateTime      @default(now())
+  paidAt             DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  paymentRecords PaymentRecord[]
+
+  @@index([invoiceNumber], name: "idx_invoice_number")
+  @@index([tripId], name: "idx_invoice_tripId")
+  @@index([patientId], name: "idx_invoice_patientId")
+  @@index([driverId], name: "idx_invoice_driverId")
+  @@index([paymentStatus], name: "idx_invoice_paymentStatus")
+  @@map("invoices")
+}
+
+model PaymentRecord {
+  id                   String        @id @default(uuid())
+  invoiceId            String
+  invoice              Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount               Decimal       @db.Decimal(10, 2)
+  paymentGateway       String?
+  gatewayTransactionId String?
+  paymentMethod        PaymentMethod
+  status               PaymentStatus
+  gatewayResponse      Json?
+  paidAt               DateTime      @default(now())
+  createdAt            DateTime      @default(now())
+
+  @@index([invoiceId], name: "idx_payment_invoiceId")
+  @@index([gatewayTransactionId], name: "idx_payment_gatewayTxnId")
+  @@index([status], name: "idx_payment_status")
+  @@map("payment_records")
+}

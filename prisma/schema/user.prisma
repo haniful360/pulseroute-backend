@@ -1,0 +1,35 @@
+model User {
+  id                 String       @id @default(uuid())
+  name               String
+  email              String       @unique
+  password           String?
+  googleId           String?      @unique
+  authProvider       AuthProvider @default(LOCAL)
+  phone              String?
+  avatarUrl          String?
+  role               Role         @default(USER)
+  status             UserStatus   @default(ACTIVE)
+  emailVerified      Boolean      @default(false)
+  needPasswordChange Boolean      @default(false)
+  isDeleted          Boolean      @default(false)
+  deletedAt          DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  // Profile relations
+  patient Patient?
+  driver  Driver?
+  admin   Admin?
+
+  // Admin audit & verification relations
+  verifiedDrivers  Driver[]        @relation("DriverVerifier")
+  verifiedVehicles Vehicle[]       @relation("VehicleVerifier")
+  processedPayouts PayoutRequest[] @relation("PayoutProcessor")
+
+  @@index([email], name: "idx_user_email")
+  @@index([googleId], name: "idx_user_googleId")
+  @@index([role], name: "idx_user_role")
+  @@index([status], name: "idx_user_status")
+  @@index([isDeleted], name: "idx_user_isDeleted")
+  @@map("users")
+}

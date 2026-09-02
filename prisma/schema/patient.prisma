@@ -1,0 +1,29 @@
+model Patient {
+  id                   String    @id @default(uuid(7))
+  name                 String
+  email                String    @unique
+  contactNumber        String?
+  address              String?
+  emergencyContactName String?
+  bloodGroup           String?
+  gender               Gender?
+  dateOfBirth          DateTime?
+  medicalHistory       String?
+  isDeleted            Boolean   @default(false)
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  trips    Trip[]
+  invoices Invoice[]
+  reviews  Review[]
+
+  @@index([email], name: "idx_patient_email")
+  @@index([contactNumber], name: "idx_patient_contact")
+  @@index([isDeleted], name: "idx_patient_isDeleted")
+  @@map("patients")
+}

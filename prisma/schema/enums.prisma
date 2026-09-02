@@ -1,0 +1,117 @@
+enum Role {
+  SUPER_ADMIN
+  DRIVER
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+  PENDING_APPROVAL
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum DriverVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum DutyStatus {
+  ONLINE
+  OFFLINE
+  ON_TRIP
+  BUSY
+}
+
+enum AmbulanceType {
+  BASIC
+  AC
+  ICU
+  CCU
+  FREEZER
+  NEONATAL
+}
+
+enum VehicleVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TripStatus {
+  REQUESTED
+  ACCEPTED
+  EN_ROUTE
+  ARRIVED
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum EmergencySeverity {
+  CRITICAL
+  HIGH
+  MODERATE
+  LOW
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum PaymentMethod {
+  STRIPE
+  CASH
+}
+
+enum TransactionType {
+  TRIP_EARNING
+  COMMISSION_DEDUCTION
+  PAYOUT_WITHDRAWAL
+  BONUS
+  PENALTY
+  REFUND
+}
+
+enum TransactionDirection {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  REQUESTED
+  PROCESSING
+  APPROVED
+  REJECTED
+}

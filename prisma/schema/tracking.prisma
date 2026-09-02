@@ -1,0 +1,16 @@
+model DriverLocationLog {
+  id         String   @id @default(uuid())
+  driverId   String
+  driver     Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  tripId     String?
+  trip       Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  latitude   Float
+  longitude  Float
+  heading    Float?
+  speed      Float?
+  recordedAt DateTime @default(now())
+
+  @@index([driverId, recordedAt], name: "idx_loc_driver_time")
+  @@index([tripId, recordedAt], name: "idx_loc_trip_time")
+  @@map("driver_location_logs")
+}

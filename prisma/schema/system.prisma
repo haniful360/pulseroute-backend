@@ -1,0 +1,10 @@
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@index([key], name: "idx_setting_key")
+  @@map("system_settings")
+}

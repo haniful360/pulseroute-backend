@@ -1,0 +1,20 @@
+model Admin {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  orgEmail      String?
+  contactNumber String?
+  department    String?
+  isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([email], name: "idx_admin_email")
+  @@index([isDeleted], name: "idx_admin_isDeleted")
+  @@map("admins")
+}
