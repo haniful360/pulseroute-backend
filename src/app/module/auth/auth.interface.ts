@@ -1,19 +1,64 @@
-import { Role } from "../../../generated/prisma/browser"
+import { AmbulanceType, Gender, Role } from "../../../generated/prisma/enums";
 
-export interface ILoginUserPayload {
-    email: string
-    password: string
+export interface IRegisterUserPayload {
+  name: string;
+  email: string;
+  password: string;
+  contactNumber?: string;
+  address?: string;
+  emergencyContactName?: string;
+  emergencyContactNumber?: string;
+  bloodGroup?: string;
+  gender?: Gender;
+  dateOfBirth?: string | Date;
+  medicalHistory?: string;
 }
 
-export interface IRegisterPatientPayload {
-    name: string
-    email: string
-    password: string
+export interface IRegisterDriverPayload {
+  name: string;
+  email: string;
+  password: string;
+  contactNumber: string;
+  licenseNumber: string;
+  licenseExpiry?: string | Date;
+  nidNumber?: string;
+  experienceYears?: number;
+  
+  // Ambulance / Vehicle information
+  vehicleNumber?: string;
+  ambulanceType?: AmbulanceType;
+  model?: string;
+  manufacturer?: string;
+  year?: number;
+  hasOxygen?: boolean;
+  hasVentilator?: boolean;
+  hasDefibrillator?: boolean;
+  hasSuctionMachine?: boolean;
+  equipmentDetails?: string;
+}
+
+export interface IRegisterAdminPayload {
+  name: string;
+  email: string;
+  password: string;
+  orgEmail?: string;
+  contactNumber?: string;
+  department?: string;
+}
+
+export interface ILoginUserPayload {
+  email: string;
+  password: string;
+}
+
+export interface IChangePasswordPayload {
+  oldPassword: string;
+  newPassword: string;
 }
 
 export interface IRequestUser {
-    userId: string
-    email: string
-    name: string
-    role: Role
+  userId: string;
+  email: string;
+  name: string;
+  role: Role;
 }
