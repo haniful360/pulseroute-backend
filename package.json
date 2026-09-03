@@ -28,6 +28,7 @@
         "http-status": "^2.1.0",
         "jsonwebtoken": "^9.0.3",
         "pg": "^8.22.0",
+        "redis": "^6.2.1",
         "swagger-ui-express": "^5.0.1"
     },
     "devDependencies": {
