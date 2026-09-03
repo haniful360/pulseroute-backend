@@ -2,7 +2,9 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Application, Request, Response } from "express";
 import httpStatus from "http-status";
+import swaggerUi from "swagger-ui-express";
 import config from "./app/config";
+import { swaggerDocument } from "./app/docs/swagger";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
@@ -23,6 +25,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
+// Interactive Swagger API Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // Application routes
 app.use("/api/v1/auth", AuthRoutes);
 
@@ -31,6 +36,7 @@ app.get("/", async (_req: Request, res: Response) => {
   res.status(httpStatus.OK).json({
     success: true,
     message: "Welcome to PulseRoute — Emergency Ambulance Dispatch Platform API",
+    documentation: "/api-docs",
     version: "1.0.0",
   });
 });

@@ -2,7 +2,17 @@
 
 High-performance emergency ambulance dispatch backend system built with Node.js, Express, TypeScript, Prisma ORM, and PostgreSQL.
 
-**Stack:** Node.js · Express 5 · TypeScript · Prisma 7 · PostgreSQL · JWT Auth · pnpm
+**Stack:** Node.js · Express 5 · TypeScript · Prisma 7 · PostgreSQL · JWT Auth · Swagger / OpenAPI 3.0 · pnpm
+
+---
+
+## 📖 Interactive API Documentation (Swagger)
+
+Start the server and visit:
+```
+http://localhost:5000/api-docs
+```
+Interactive Swagger UI allows you to explore all endpoints, test requests with sample payloads, and authorize with JWT tokens directly from the browser.
 
 ---
 
