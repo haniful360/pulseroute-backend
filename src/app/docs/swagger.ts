@@ -1,3 +1,5 @@
+import { userPaths, userSchemas } from "./user.swagger";
+
 export const swaggerDocument = {
   openapi: "3.0.0",
   info: {
@@ -22,10 +24,12 @@ export const swaggerDocument = {
         type: "http",
         scheme: "bearer",
         bearerFormat: "JWT",
-        description: "Enter your JWT Access Token in the format: Bearer <token>",
+        description:
+          "Enter your JWT Access Token in the format: Bearer <token>",
       },
     },
     schemas: {
+      ...userSchemas,
       RegisterUserRequest: {
         type: "object",
         required: ["name", "email", "password"],
@@ -173,7 +177,8 @@ export const swaggerDocument = {
         properties: {
           idToken: {
             type: "string",
-            description: "Google OAuth ID Token obtained from Google Sign-In SDK",
+            description:
+              "Google OAuth ID Token obtained from Google Sign-In SDK",
             example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE3NGI2...",
           },
           token: {
@@ -704,5 +709,6 @@ export const swaggerDocument = {
         },
       },
     },
+    ...userPaths,
   },
 };
