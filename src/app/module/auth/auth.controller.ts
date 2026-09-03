@@ -15,7 +15,33 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.registerUser(payload);
 
-  const { accessToken, refreshToken, user, patient } = result;
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message:
+      "Verification OTP sent to your email. Please verify within 5 minutes to complete registration.",
+    data: result,
+  });
+});
+
+const registerDriver = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await AuthService.registerDriver(payload);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message:
+      "Verification OTP sent to your email. Please verify within 5 minutes to complete driver registration.",
+    data: result,
+  });
+});
+
+const verifyOtp = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await AuthService.verifyOtp(payload);
+
+  const { accessToken, refreshToken, user } = result;
 
   res.cookie("accessToken", accessToken, {
     ...cookieOptions,
@@ -27,53 +53,35 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   });
 
+  const message =
+    result.type === "DRIVER"
+      ? "Email verified and driver application submitted successfully. Account is pending admin approval."
+      : "Email verified and patient account created successfully!";
+
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "User registered successfully",
-    data: {
-      user,
-      patient,
-      accessToken,
-      refreshToken,
-    },
+    message,
+    data: result,
   });
 });
 
-const registerDriver = catchAsync(async (req: Request, res: Response) => {
+const resendOtp = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
-  const result = await AuthService.registerDriver(payload);
-
-  const { accessToken, refreshToken, user, driver } = result;
-
-  res.cookie("accessToken", accessToken, {
-    ...cookieOptions,
-    maxAge: 1000 * 60 * 60 * 24,
-  });
-
-  res.cookie("refreshToken", refreshToken, {
-    ...cookieOptions,
-    maxAge: 1000 * 60 * 60 * 24 * 7,
-  });
+  const result = await AuthService.resendOtp(payload);
 
   sendResponse(res, {
-    statusCode: httpStatus.CREATED,
+    statusCode: httpStatus.OK,
     success: true,
-    message:
-      "Driver application submitted successfully. Account is pending verification.",
-    data: {
-      user,
-      driver,
-      accessToken,
-      refreshToken,
-    },
+    message: result.message,
+    data: result,
   });
 });
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.loginUser(payload);
-  const { accessToken, refreshToken, user, profile } = result;
+  const { accessToken, refreshToken, user, profile, welcomeMessage } = result;
 
   res.cookie("accessToken", accessToken, {
     ...cookieOptions,
@@ -88,7 +96,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Logged in successfully",
+    message: welcomeMessage || "Logged in successfully",
     data: {
       user,
       profile,
@@ -174,6 +182,8 @@ const logoutUser = catchAsync(async (_req: Request, res: Response) => {
 export const AuthController = {
   registerUser,
   registerDriver,
+  verifyOtp,
+  resendOtp,
   loginUser,
   getMe,
   changePassword,

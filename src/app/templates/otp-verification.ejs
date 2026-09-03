@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseRoute Verification Code</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #334155;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      width: 100%;
+      background-color: #f1f5f9;
+      padding: 40px 15px;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 580px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      padding: 36px 30px;
+      text-align: center;
+      position: relative;
+    }
+    .logo-container {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 800;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      display: inline-block;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35);
+    }
+    .header h1 {
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 12px 0 4px 0;
+      letter-spacing: -0.5px;
+    }
+    .header p {
+      color: #94a3b8;
+      font-size: 14px;
+      margin: 0;
+      font-weight: 400;
+    }
+    .content {
+      padding: 36px 32px;
+      line-height: 1.6;
+    }
+    .greeting {
+      font-size: 17px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 16px;
+    }
+    .instruction {
+      font-size: 15px;
+      color: #475569;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+    .role-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+      background-color: #fee2e2;
+      color: #be123c;
+      margin-bottom: 16px;
+    }
+    .otp-box {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      margin: 28px 0;
+    }
+    .otp-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #64748b;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .otp-code {
+      font-family: "Courier New", Courier, monospace, sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      color: #e11d48;
+      letter-spacing: 10px;
+      margin: 8px 0;
+      display: block;
+    }
+    .expiry-text {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fff1f2;
+      color: #be123c;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin-top: 10px;
+      border: 1px solid #fecdd3;
+    }
+    .security-notice {
+      background-color: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin-top: 28px;
+    }
+    .security-notice p {
+      margin: 0;
+      font-size: 13px;
+      color: #92400e;
+      line-height: 1.5;
+    }
+    .security-notice strong {
+      color: #78350f;
+    }
+    .footer {
+      background-color: #f8fafc;
+      padding: 24px 30px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+    .footer p {
+      font-size: 12px;
+      color: #94a3b8;
+      margin: 4px 0;
+      line-height: 1.5;
+    }
+    .footer a {
+      color: #e11d48;
+      text-decoration: none;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-container">
+          <div class="logo-badge">⚡ PulseRoute</div>
+        </div>
+        <h1>Emergency Ambulance Dispatch</h1>
+        <p>Your Rapid Medical Assistance Platform</p>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content">
+        <% if (role) { %>
+          <div class="role-badge"><%= role === 'DRIVER' ? '🚑 Driver Application' : '👤 Patient Registration' %></div>
+        <% } %>
+
+        <div class="greeting">Hello <%= name %>,</div>
+        
+        <p class="instruction">
+          Thank you for joining <strong>PulseRoute</strong>. Please use the one-time verification code below to verify your email address and activate your account.
+        </p>
+
+        <!-- OTP Display Box -->
+        <div class="otp-box">
+          <div class="otp-label">Verification Code (OTP)</div>
+          <div class="otp-code"><%= otp %></div>
+          <div class="expiry-text">
+            ⏱ Valid for <%= expirationMinutes %> minutes only
+          </div>
+        </div>
+
+        <p style="font-size: 14px; color: #64748b; margin-top: 20px;">
+          Enter this code in the registration screen to complete your verification. If you did not request this, please safely ignore this email.
+        </p>
+
+        <!-- Security Warning -->
+        <div class="security-notice">
+          <p>
+            <strong>🔒 Security Alert:</strong> Never share your verification code with anyone. PulseRoute team members will never ask for your password or OTP.
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p><strong>PulseRoute Emergency Dispatch Platform</strong></p>
+        <p>Need urgent help? Call national hotline <strong>999</strong> or contact <a href="mailto:support@pulseroute.com">support@pulseroute.com</a></p>
+        <p style="margin-top: 12px;">&copy; <%= new Date().getFullYear() %> PulseRoute System. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

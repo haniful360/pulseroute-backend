@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import ejs from "ejs";
 import httpStatus from "http-status";
 import { JwtPayload } from "jsonwebtoken";
+import path from "path";
 import {
   AmbulanceType,
   DriverVerificationStatus,
@@ -11,15 +14,59 @@ import {
 } from "../../../generated/prisma/enums";
 import config from "../../config";
 import AppError from "../../errors/AppError";
+import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
+import { redisClient } from "../../lib/redis";
 import { jwtUtils } from "../../utils/jwt";
 import {
   IChangePasswordPayload,
   ILoginUserPayload,
   IRegisterDriverPayload,
   IRegisterUserPayload,
+  IResendOtpPayload,
   IRequestUser,
+  IVerifyOtpPayload,
 } from "./auth.interface";
+
+const OTP_EXPIRATION_SECONDS = 5 * 60; // 5 minutes
+
+const sendVerificationEmail = async (
+  email: string,
+  name: string,
+  otp: string,
+  role: "USER" | "DRIVER"
+) => {
+  const templatePath = path.join(
+    process.cwd(),
+    "src",
+    "app",
+    "templates",
+    "otp-verification.ejs"
+  );
+
+  const html = await ejs.renderFile(templatePath, {
+    otp,
+    name,
+    email,
+    role,
+    expirationMinutes: OTP_EXPIRATION_SECONDS / 60,
+  });
+
+  try {
+    await transporter.sendMail({
+      from: config.smtp_sender,
+      to: email,
+      subject: `PulseRoute — Verify Your Email (${role === "DRIVER" ? "Driver Application" : "Patient Account"})`,
+      text: `Your PulseRoute verification code is: ${otp}. It will expire in 5 minutes.`,
+      html,
+    });
+  } catch (error) {
+    console.error("Nodemailer Error sending OTP email:", error);
+    if (config.node_env === "development") {
+      console.log(` [DEV MODE] OTP for ${email}: ${otp}`);
+    }
+  }
+};
 
 const registerUser = async (payload: IRegisterUserPayload) => {
   const email = payload.email.trim().toLowerCase();
@@ -31,69 +78,35 @@ const registerUser = async (payload: IRegisterUserPayload) => {
   if (isUserExists) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "A user with this email already exists",
+      "A user with this email already exists"
     );
   }
 
   const saltRounds = Number(config.bcrypt_salt_rounds);
   const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
 
-  const createdUser = await prisma.user.create({
-    data: {
-      name: payload.name,
-      email,
-      password: hashedPassword,
-      phone: payload.contactNumber,
-      role: Role.USER,
-      status: UserStatus.ACTIVE,
-      emailVerified: false,
-      patient: {
-        create: {
-          name: payload.name,
-          email,
-          contactNumber: payload.contactNumber,
-          address: payload.address,
-          emergencyContactName: payload.emergencyContactName,
-          emergencyContactNumber: payload.emergencyContactNumber,
-          bloodGroup: payload.bloodGroup,
-          gender: payload.gender,
-          dateOfBirth: payload.dateOfBirth
-            ? new Date(payload.dateOfBirth)
-            : undefined,
-          medicalHistory: payload.medicalHistory,
-        },
-      },
-    },
-    omit: { password: true },
-    include: { patient: true },
-  });
+  const otp = crypto.randomInt(100000, 1000000).toString();
+  const otpKey = `user_register_otp:${email}`;
+  const dataKey = `user_registration_data:${email}`;
 
-  const { patient, ...user } = createdUser;
-
-  const jwtPayload = {
-    userId: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
+  const registrationData = {
+    ...payload,
+    email,
+    password: hashedPassword,
   };
 
-  const accessToken = jwtUtils.createToken(
-    jwtPayload,
-    config.jwt_access_secret,
-    config.jwt_access_expires_in,
-  );
+  // Store OTP and pending registration data in Redis with 5-minute TTL
+  await redisClient.set(otpKey, otp, { EX: OTP_EXPIRATION_SECONDS });
+  await redisClient.set(dataKey, JSON.stringify(registrationData), {
+    EX: OTP_EXPIRATION_SECONDS,
+  });
 
-  const refreshToken = jwtUtils.createToken(
-    jwtPayload,
-    config.jwt_refresh_secret,
-    config.jwt_refresh_expires_in,
-  );
+  // Send attractive EJS email
+  await sendVerificationEmail(email, payload.name, otp, "USER");
 
   return {
-    user,
-    patient,
-    accessToken,
-    refreshToken,
+    email,
+    expiresIn: "5 minutes",
   };
 };
 
@@ -107,7 +120,7 @@ const registerDriver = async (payload: IRegisterDriverPayload) => {
   if (isUserExists) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "An account with this email already exists",
+      "An account with this email already exists"
     );
   }
 
@@ -118,7 +131,7 @@ const registerDriver = async (payload: IRegisterDriverPayload) => {
   if (isLicenseExists) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "A driver with this license number already exists",
+      "A driver with this license number already exists"
     );
   }
 
@@ -129,7 +142,7 @@ const registerDriver = async (payload: IRegisterDriverPayload) => {
     if (isVehicleExists) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        "A vehicle with this license plate / vehicle number already exists",
+        "A vehicle with this license plate / vehicle number already exists"
       );
     }
   }
@@ -137,110 +150,311 @@ const registerDriver = async (payload: IRegisterDriverPayload) => {
   const saltRounds = Number(config.bcrypt_salt_rounds) || 10;
   const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
 
-  const result = await prisma.$transaction(async (tx) => {
-    // 1. Create Base User
-    const user = await tx.user.create({
+  const otp = crypto.randomInt(100000, 1000000).toString();
+  const otpKey = `driver_register_otp:${email}`;
+  const dataKey = `driver_registration_data:${email}`;
+
+  const registrationData = {
+    ...payload,
+    email,
+    password: hashedPassword,
+  };
+
+  // Store OTP and pending driver registration data in Redis with 5-minute TTL
+  await redisClient.set(otpKey, otp, { EX: OTP_EXPIRATION_SECONDS });
+  await redisClient.set(dataKey, JSON.stringify(registrationData), {
+    EX: OTP_EXPIRATION_SECONDS,
+  });
+
+  // Send attractive EJS email
+  await sendVerificationEmail(email, payload.name, otp, "DRIVER");
+
+  return {
+    email,
+    expiresIn: "5 minutes",
+  };
+};
+
+const verifyOtp = async (payload: IVerifyOtpPayload) => {
+  const email = payload.email.trim().toLowerCase();
+  const inputOtp = payload.otp.trim();
+
+  const userOtpKey = `user_register_otp:${email}`;
+  const userDataKey = `user_registration_data:${email}`;
+
+  const driverOtpKey = `driver_register_otp:${email}`;
+  const driverDataKey = `driver_registration_data:${email}`;
+
+  // 1. Check User (Patient) OTP
+  const storedUserOtp = await redisClient.get(userOtpKey);
+  if (storedUserOtp) {
+    if (storedUserOtp !== inputOtp) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Invalid OTP. Please enter the correct 6-digit code."
+      );
+    }
+
+    const cachedDataStr = await redisClient.get(userDataKey);
+    if (!cachedDataStr) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Registration session has expired. Please register again."
+      );
+    }
+
+    const userData = JSON.parse(cachedDataStr as string);
+
+    // Create User & Patient profile in Database
+    const createdUser = await prisma.user.create({
       data: {
-        name: payload.name,
-        email,
-        password: hashedPassword,
-        phone: payload.contactNumber,
-        role: Role.DRIVER,
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        phone: userData.contactNumber,
+        role: Role.USER,
         status: UserStatus.ACTIVE,
-        emailVerified: false,
+        emailVerified: true,
+        patient: {
+          create: {
+            name: userData.name,
+            email: userData.email,
+            contactNumber: userData.contactNumber,
+            address: userData.address,
+            emergencyContactName: userData.emergencyContactName,
+            emergencyContactNumber: userData.emergencyContactNumber,
+            bloodGroup: userData.bloodGroup,
+            gender: userData.gender,
+            dateOfBirth: userData.dateOfBirth
+              ? new Date(userData.dateOfBirth)
+              : undefined,
+            medicalHistory: userData.medicalHistory,
+          },
+        },
       },
       omit: { password: true },
+      include: { patient: true },
     });
 
-    // 2. Create Driver Profile
-    const driver = await tx.driver.create({
-      data: {
-        userId: user.id,
-        name: payload.name,
-        email,
-        contactNumber: payload.contactNumber,
-        licenseNumber: payload.licenseNumber,
-        licenseExpiry: payload.licenseExpiry
-          ? new Date(payload.licenseExpiry)
-          : undefined,
-        nidNumber: payload.nidNumber,
-        experienceYears: payload.experienceYears || 0,
-        verificationStatus: DriverVerificationStatus.PENDING,
-        dutyStatus: DutyStatus.OFFLINE,
-      },
-    });
+    // Delete Redis keys
+    await redisClient.del(userOtpKey);
+    await redisClient.del(userDataKey);
 
-    // 3. Create Driver Wallet
-    const wallet = await tx.driverWallet.create({
-      data: {
-        driverId: driver.id,
-        balance: 0.0,
-        currency: "BDT",
-      },
-    });
+    const { patient, ...user } = createdUser;
 
-    // 4. Create Vehicle (if provided)
-    let vehicle = null;
-    if (payload.vehicleNumber && payload.ambulanceType) {
-      vehicle = await tx.vehicle.create({
+    const jwtPayload = {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    const accessToken = jwtUtils.createToken(
+      jwtPayload,
+      config.jwt_access_secret,
+      config.jwt_access_expires_in
+    );
+
+    const refreshToken = jwtUtils.createToken(
+      jwtPayload,
+      config.jwt_refresh_secret,
+      config.jwt_refresh_expires_in
+    );
+
+    return {
+      type: "USER" as const,
+      user,
+      patient,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  // 2. Check Driver OTP
+  const storedDriverOtp = await redisClient.get(driverOtpKey);
+  if (storedDriverOtp) {
+    if (storedDriverOtp !== inputOtp) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Invalid OTP. Please enter the correct 6-digit code."
+      );
+    }
+
+    const cachedDataStr = await redisClient.get(driverDataKey);
+    if (!cachedDataStr) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Driver registration session has expired. Please register again."
+      );
+    }
+
+    const driverData = JSON.parse(cachedDataStr as string);
+
+    // In a Prisma Transaction, create User, Driver, Wallet, Vehicle
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
         data: {
-          driverId: driver.id,
-          vehicleNumber: payload.vehicleNumber,
-          ambulanceType: payload.ambulanceType as AmbulanceType,
-          model: payload.model,
-          manufacturer: payload.manufacturer,
-          year: payload.year ? Number(payload.year) : undefined,
-          hasOxygen: payload.hasOxygen !== undefined ? payload.hasOxygen : true,
-          hasVentilator: payload.hasVentilator || false,
-          hasDefibrillator: payload.hasDefibrillator || false,
-          hasSuctionMachine: payload.hasSuctionMachine || false,
-          equipmentDetails: payload.equipmentDetails,
-          verificationStatus: VehicleVerificationStatus.PENDING,
+          name: driverData.name,
+          email: driverData.email,
+          password: driverData.password,
+          phone: driverData.contactNumber,
+          role: Role.DRIVER,
+          status: UserStatus.ACTIVE,
+          emailVerified: true,
+        },
+        omit: { password: true },
+      });
+
+      const driver = await tx.driver.create({
+        data: {
+          userId: user.id,
+          name: driverData.name,
+          email: driverData.email,
+          contactNumber: driverData.contactNumber,
+          licenseNumber: driverData.licenseNumber,
+          licenseExpiry: driverData.licenseExpiry
+            ? new Date(driverData.licenseExpiry)
+            : undefined,
+          nidNumber: driverData.nidNumber,
+          experienceYears: driverData.experienceYears || 0,
+          verificationStatus: DriverVerificationStatus.PENDING,
+          dutyStatus: DutyStatus.OFFLINE,
         },
       });
 
-      // Set as driver's active vehicle
-      await tx.driver.update({
-        where: { id: driver.id },
-        data: { currentVehicleId: vehicle.id },
+      const wallet = await tx.driverWallet.create({
+        data: {
+          driverId: driver.id,
+          balance: 0.0,
+          currency: "BDT",
+        },
       });
-    }
+
+      let vehicle = null;
+      if (driverData.vehicleNumber && driverData.ambulanceType) {
+        vehicle = await tx.vehicle.create({
+          data: {
+            driverId: driver.id,
+            vehicleNumber: driverData.vehicleNumber,
+            ambulanceType: driverData.ambulanceType as AmbulanceType,
+            model: driverData.model,
+            manufacturer: driverData.manufacturer,
+            year: driverData.year ? Number(driverData.year) : undefined,
+            hasOxygen:
+              driverData.hasOxygen !== undefined ? driverData.hasOxygen : true,
+            hasVentilator: driverData.hasVentilator || false,
+            hasDefibrillator: driverData.hasDefibrillator || false,
+            hasSuctionMachine: driverData.hasSuctionMachine || false,
+            equipmentDetails: driverData.equipmentDetails,
+            verificationStatus: VehicleVerificationStatus.PENDING,
+          },
+        });
+
+        await tx.driver.update({
+          where: { id: driver.id },
+          data: { currentVehicleId: vehicle.id },
+        });
+      }
+
+      return {
+        user,
+        driver: {
+          ...driver,
+          currentVehicle: vehicle,
+          wallet,
+        },
+      };
+    });
+
+    // Delete Redis keys
+    await redisClient.del(driverOtpKey);
+    await redisClient.del(driverDataKey);
+
+    const jwtPayload = {
+      userId: result.user.id,
+      name: result.user.name,
+      email: result.user.email,
+      role: result.user.role,
+    };
+
+    const accessToken = jwtUtils.createToken(
+      jwtPayload,
+      config.jwt_access_secret,
+      config.jwt_access_expires_in
+    );
+
+    const refreshToken = jwtUtils.createToken(
+      jwtPayload,
+      config.jwt_refresh_secret,
+      config.jwt_refresh_expires_in
+    );
 
     return {
-      user,
-      driver: {
-        ...driver,
-        currentVehicle: vehicle,
-        wallet,
-      },
+      type: "DRIVER" as const,
+      user: result.user,
+      driver: result.driver,
+      accessToken,
+      refreshToken,
     };
-  });
+  }
 
-  const jwtPayload = {
-    userId: result.user.id,
-    name: result.user.name,
-    email: result.user.email,
-    role: result.user.role,
-  };
-
-  const accessToken = jwtUtils.createToken(
-    jwtPayload,
-    config.jwt_access_secret,
-    config.jwt_access_expires_in,
+  throw new AppError(
+    httpStatus.BAD_REQUEST,
+    "No pending registration found for this email, or the OTP has expired. Please register again."
   );
+};
 
-  const refreshToken = jwtUtils.createToken(
-    jwtPayload,
-    config.jwt_refresh_secret,
-    config.jwt_refresh_expires_in,
+const resendOtp = async (payload: IResendOtpPayload) => {
+  const email = payload.email.trim().toLowerCase();
+
+  const userOtpKey = `user_register_otp:${email}`;
+  const userDataKey = `user_registration_data:${email}`;
+
+  const driverOtpKey = `driver_register_otp:${email}`;
+  const driverDataKey = `driver_registration_data:${email}`;
+
+  const cachedUserData = await redisClient.get(userDataKey);
+  if (cachedUserData) {
+    const userData = JSON.parse(cachedUserData as string);
+    const newOtp = crypto.randomInt(100000, 1000000).toString();
+
+    await redisClient.set(userOtpKey, newOtp, { EX: OTP_EXPIRATION_SECONDS });
+    await redisClient.set(userDataKey, cachedUserData as string, {
+      EX: OTP_EXPIRATION_SECONDS,
+    });
+
+    await sendVerificationEmail(email, userData.name, newOtp, "USER");
+
+    return {
+      email,
+      message: "New verification OTP has been sent to your email.",
+      expiresIn: "5 minutes",
+    };
+  }
+
+  const cachedDriverData = await redisClient.get(driverDataKey);
+  if (cachedDriverData) {
+    const driverData = JSON.parse(cachedDriverData as string);
+    const newOtp = crypto.randomInt(100000, 1000000).toString();
+
+    await redisClient.set(driverOtpKey, newOtp, { EX: OTP_EXPIRATION_SECONDS });
+    await redisClient.set(driverDataKey, cachedDriverData as string, {
+      EX: OTP_EXPIRATION_SECONDS,
+    });
+
+    await sendVerificationEmail(email, driverData.name, newOtp, "DRIVER");
+
+    return {
+      email,
+      message: "New verification OTP has been sent to your email.",
+      expiresIn: "5 minutes",
+    };
+  }
+
+  throw new AppError(
+    httpStatus.NOT_FOUND,
+    "No pending registration session found for this email. Please register again."
   );
-
-  return {
-    user: result.user,
-    driver: result.driver,
-    accessToken,
-    refreshToken,
-  };
 };
 
 const loginUser = async (payload: ILoginUserPayload) => {
@@ -261,36 +475,33 @@ const loginUser = async (payload: ILoginUserPayload) => {
   });
 
   if (!user) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "No account found with this email",
-    );
+    throw new AppError(httpStatus.NOT_FOUND, "No account found with this email");
   }
 
   if (user.isDeleted || user.status === UserStatus.DELETED) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "This account has been permanently deleted",
+      "This account has been permanently deleted"
     );
   }
 
   if (user.status === UserStatus.BLOCKED) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "Your account has been blocked. Please contact support.",
+      "Your account has been blocked. Please contact support."
     );
   }
 
   if (!user.password) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "This account was registered via Google Login. Please sign in with Google.",
+      "This account was registered via Google Login. Please sign in with Google."
     );
   }
 
   const isPasswordMatched = await bcrypt.compare(
     payload.password,
-    user.password,
+    user.password
   );
 
   if (!isPasswordMatched) {
@@ -317,13 +528,13 @@ const loginUser = async (payload: ILoginUserPayload) => {
   const accessToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_access_secret,
-    config.jwt_access_expires_in,
+    config.jwt_access_expires_in
   );
 
   const refreshToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_refresh_secret,
-    config.jwt_refresh_expires_in,
+    config.jwt_refresh_expires_in
   );
 
   const {
@@ -334,11 +545,19 @@ const loginUser = async (payload: ILoginUserPayload) => {
     ...sanitizedUser
   } = user;
 
+  const roleTitle =
+    user.role === Role.SUPER_ADMIN
+      ? "Super Administrator"
+      : user.role === Role.DRIVER
+      ? "Ambulance Driver"
+      : "User";
+
   return {
     user: sanitizedUser,
     profile,
     accessToken,
     refreshToken,
+    welcomeMessage: `Welcome back, ${user.name}! Logged in successfully as ${roleTitle}.`,
   };
 };
 
@@ -376,7 +595,12 @@ const getMe = async (userPayload: IRequestUser) => {
     profile = user.admin;
   }
 
-  const { patient: _pat, driver: _drv, admin: _adm, ...sanitizedUser } = user;
+  const {
+    patient: _pat,
+    driver: _drv,
+    admin: _adm,
+    ...sanitizedUser
+  } = user;
 
   return {
     user: sanitizedUser,
@@ -386,7 +610,7 @@ const getMe = async (userPayload: IRequestUser) => {
 
 const changePassword = async (
   userPayload: IRequestUser,
-  payload: IChangePasswordPayload,
+  payload: IChangePasswordPayload
 ) => {
   const user = await prisma.user.findUnique({
     where: { id: userPayload.userId },
@@ -399,13 +623,13 @@ const changePassword = async (
   if (!user.password) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Account registered without password. Please use set-password.",
+      "Account registered without password. Please use set-password."
     );
   }
 
   const isOldPasswordCorrect = await bcrypt.compare(
     payload.oldPassword,
-    user.password,
+    user.password
   );
 
   if (!isOldPasswordCorrect) {
@@ -415,7 +639,7 @@ const changePassword = async (
   if (payload.oldPassword === payload.newPassword) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "New password cannot be the same as current password",
+      "New password cannot be the same as current password"
     );
   }
 
@@ -438,13 +662,13 @@ const changePassword = async (
 const refreshToken = async (token: string) => {
   const verifiedRefreshToken = jwtUtils.verifyToken(
     token,
-    config.jwt_refresh_secret,
+    config.jwt_refresh_secret
   );
 
   if (!verifiedRefreshToken.success || !verifiedRefreshToken.data) {
     throw new AppError(
       httpStatus.UNAUTHORIZED,
-      verifiedRefreshToken.error || "Invalid or expired refresh token",
+      verifiedRefreshToken.error || "Invalid or expired refresh token"
     );
   }
 
@@ -457,7 +681,7 @@ const refreshToken = async (token: string) => {
   if (!user || user.isDeleted || user.status !== UserStatus.ACTIVE) {
     throw new AppError(
       httpStatus.UNAUTHORIZED,
-      "User account is inactive or not found",
+      "User account is inactive or not found"
     );
   }
 
@@ -471,13 +695,13 @@ const refreshToken = async (token: string) => {
   const accessToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_access_secret,
-    config.jwt_access_expires_in,
+    config.jwt_access_expires_in
   );
 
   const newRefreshToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_refresh_secret,
-    config.jwt_refresh_expires_in,
+    config.jwt_refresh_expires_in
   );
 
   return {
@@ -489,6 +713,8 @@ const refreshToken = async (token: string) => {
 export const AuthService = {
   registerUser,
   registerDriver,
+  verifyOtp,
+  resendOtp,
   loginUser,
   getMe,
   changePassword,

@@ -1,11 +1,12 @@
-// import config from "../config";
+import nodemailer from "nodemailer";
+import config from "../config";
 
-// import nodemailer from "nodemailer";
-
-// export const transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: {
-//     user: config.smtp_user,
-//     pass: config.smtp_password,
-//   },
-// });
+export const transporter = nodemailer.createTransport({
+  host: config.smtp_host,
+  port: config.smtp_port,
+  secure: config.smtp_port === 465, // true for 465, false for 587
+  auth: {
+    user: config.smtp_user,
+    pass: config.smtp_password,
+  },
+});

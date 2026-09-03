@@ -23,7 +23,7 @@ export interface IRegisterDriverPayload {
   licenseExpiry?: string | Date;
   nidNumber?: string;
   experienceYears?: number;
-  
+
   // Ambulance / Vehicle information
   vehicleNumber?: string;
   ambulanceType?: AmbulanceType;
@@ -37,13 +37,13 @@ export interface IRegisterDriverPayload {
   equipmentDetails?: string;
 }
 
-export interface IRegisterAdminPayload {
-  name: string;
+export interface IVerifyOtpPayload {
   email: string;
-  password: string;
-  orgEmail?: string;
-  contactNumber?: string;
-  department?: string;
+  otp: string;
+}
+
+export interface IResendOtpPayload {
+  email: string;
 }
 
 export interface ILoginUserPayload {

@@ -4,7 +4,7 @@ export const swaggerDocument = {
     title: "PulseRoute — Emergency Ambulance Dispatch Platform API",
     version: "1.0.0",
     description:
-      "Comprehensive REST API Documentation for PulseRoute Emergency Ambulance Dispatch Backend System.\n\n### Core Roles:\n- **USER (Patient):** Emergency ambulance booking, live status tracking, invoice & billing.\n- **DRIVER:** Duty status management (ONLINE/OFFLINE), emergency trip acceptance & lifecycle updates.\n- **SUPER_ADMIN:** Driver/vehicle verification, platform pricing & commission configuration, system analytics.",
+      "Comprehensive REST API Documentation for PulseRoute Emergency Ambulance Dispatch Backend System.\n\n### Core Roles:\n- **USER (Patient):** Emergency ambulance booking, live status tracking, invoice & billing.\n- **DRIVER:** Duty status management (ONLINE/OFFLINE), emergency trip acceptance & lifecycle updates.\n- **SUPER_ADMIN:** Driver/vehicle verification, platform pricing & commission configuration, system analytics.\n\n### Authentication Flow:\n1. User or Driver calls `/register` or `/register-driver` $\\rightarrow$ 6-digit OTP is sent to email.\n2. Client calls `/verify-otp` with `{ email, otp }` to complete registration and receive JWT tokens.",
     contact: {
       name: "PulseRoute Support",
       email: "support@pulseroute.com",
@@ -22,8 +22,7 @@ export const swaggerDocument = {
         type: "http",
         scheme: "bearer",
         bearerFormat: "JWT",
-        description:
-          "Enter your JWT Access Token in the format: Bearer <token>",
+        description: "Enter your JWT Access Token in the format: Bearer <token>",
       },
     },
     schemas: {
@@ -48,7 +47,10 @@ export const swaggerDocument = {
             example: "House 12, Road 5, Dhanmondi, Dhaka",
           },
           emergencyContactName: { type: "string", example: "Karim Ahmed" },
-          emergencyContactNumber: { type: "string", example: "+8801711223355" },
+          emergencyContactNumber: {
+            type: "string",
+            example: "+8801711223355",
+          },
           bloodGroup: { type: "string", example: "O+" },
           gender: {
             type: "string",
@@ -112,6 +114,33 @@ export const swaggerDocument = {
           equipmentDetails: {
             type: "string",
             example: "Portable oxygen cylinder, stretcher, first aid kit",
+          },
+        },
+      },
+      VerifyOtpRequest: {
+        type: "object",
+        required: ["email", "otp"],
+        properties: {
+          email: {
+            type: "string",
+            format: "email",
+            example: "rahim@example.com",
+          },
+          otp: {
+            type: "string",
+            example: "123456",
+            description: "6-digit verification code received in email",
+          },
+        },
+      },
+      ResendOtpRequest: {
+        type: "object",
+        required: ["email"],
+        properties: {
+          email: {
+            type: "string",
+            format: "email",
+            example: "rahim@example.com",
           },
         },
       },
@@ -185,7 +214,7 @@ export const swaggerDocument = {
     {
       name: "Auth",
       description:
-        "User, Driver, and Super Admin Authentication & Profile endpoints",
+        "User, Driver, and Super Admin Authentication, Redis OTP & Profile endpoints",
     },
     { name: "Health", description: "Server Health Check" },
   ],
@@ -222,9 +251,9 @@ export const swaggerDocument = {
     "/api/v1/auth/register": {
       post: {
         tags: ["Auth"],
-        summary: "Register User (Patient)",
+        summary: "Register User (Patient) - Step 1: Send OTP",
         description:
-          "Registers a new patient account, automatically creates a linked Patient profile, and returns JWT tokens.",
+          "Initiates registration for a patient, caches registration payload and generates a 6-digit OTP stored in Redis for 5 minutes, and sends an attractive verification email.",
         requestBody: {
           required: true,
           content: {
@@ -234,8 +263,8 @@ export const swaggerDocument = {
           },
         },
         responses: {
-          201: {
-            description: "User registered successfully",
+          200: {
+            description: "OTP sent to email successfully",
             content: {
               "application/json": {
                 schema: {
@@ -258,9 +287,9 @@ export const swaggerDocument = {
     "/api/v1/auth/register-driver": {
       post: {
         tags: ["Auth"],
-        summary: "Register Driver (Ambulance Driver Onboarding)",
+        summary: "Register Driver - Step 1: Send OTP",
         description:
-          "Applies as an ambulance driver, sets verificationStatus to PENDING, creates an initial driver wallet (0.00 BDT), and links vehicle details if provided.",
+          "Initiates registration for an ambulance driver, caches application payload in Redis for 5 minutes, and sends an attractive verification email.",
         requestBody: {
           required: true,
           content: {
@@ -270,8 +299,8 @@ export const swaggerDocument = {
           },
         },
         responses: {
-          201: {
-            description: "Driver application submitted successfully",
+          200: {
+            description: "OTP sent to email successfully",
             content: {
               "application/json": {
                 schema: {
@@ -291,12 +320,84 @@ export const swaggerDocument = {
         },
       },
     },
+    "/api/v1/auth/verify-otp": {
+      post: {
+        tags: ["Auth"],
+        summary: "Verify OTP - Step 2: Activate Account",
+        description:
+          "Verifies the 6-digit OTP from Redis, writes the User & Profile (Patient or Driver with Wallet) to Postgres, and returns JWT access & refresh tokens.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/VerifyOtpRequest" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Email verified and registration completed successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/StandardSuccessResponse",
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid or expired OTP",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/StandardErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/v1/auth/resend-otp": {
+      post: {
+        tags: ["Auth"],
+        summary: "Resend Verification OTP",
+        description:
+          "Generates a fresh OTP and resets the 5-minute Redis TTL for an existing pending registration.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ResendOtpRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "New OTP sent to email",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/StandardSuccessResponse",
+                },
+              },
+            },
+          },
+          404: {
+            description: "No pending registration found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/StandardErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
     "/api/v1/auth/login": {
       post: {
         tags: ["Auth"],
         summary: "Universal Dynamic Login",
         description:
-          "Logs in any role (USER, DRIVER, SUPER_ADMIN), verifies active status, and dynamically returns their role-specific profile along with JWT cookies and tokens.",
+          "Logs in any role (USER, DRIVER, SUPER_ADMIN), verifies active status, and dynamically returns their role-specific profile along with JWT cookies and personalized welcome message.",
         requestBody: {
           required: true,
           content: {

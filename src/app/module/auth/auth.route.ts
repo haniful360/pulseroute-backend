@@ -5,18 +5,20 @@ import { AuthController } from "./auth.controller";
 
 const router = Router();
 
-// Public registration routes (User & Driver only)
+// Public registration & OTP verification routes
 router.post("/register", AuthController.registerUser);
 router.post("/register-driver", AuthController.registerDriver);
+router.post("/verify-otp", AuthController.verifyOtp);
+router.post("/resend-otp", AuthController.resendOtp);
 
-// Universal dynamic login (for User, Driver, and Super Admin)
+// Universal dynamic login
 router.post("/login", AuthController.loginUser);
 
 // Refresh token & logout
 router.post("/refresh-token", AuthController.refreshToken);
 router.post("/logout", AuthController.logoutUser);
 
-// Protected routes
+// Protected routes (available to authenticated users)
 router.get(
   "/me",
   auth(Role.SUPER_ADMIN, Role.DRIVER, Role.USER),
