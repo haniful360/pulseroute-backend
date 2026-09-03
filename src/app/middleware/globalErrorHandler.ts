@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
+import { ZodError } from "zod";
 import { Prisma } from "../../generated/prisma/client";
 import config from "../config";
 import AppError from "../errors/AppError";
@@ -23,9 +24,16 @@ export const globalErrorHandler = (
     statusCode = err.statusCode;
     errorMessage = err.message;
     errorName = "AppError";
+  } else if (err instanceof ZodError) {
+    statusCode = httpStatus.BAD_REQUEST;
+    errorName = "ZodValidationError";
+    errorMessage = err.issues
+      .map((issue) => `${issue.path.join(".") || "field"}: ${issue.message}`)
+      .join("; ");
   } else if (err instanceof Prisma.PrismaClientValidationError) {
     statusCode = httpStatus.BAD_REQUEST;
-    errorMessage = "You have provided incorrect field types or missing fields in database query";
+    errorMessage =
+      "You have provided incorrect field types or missing fields in database query";
     errorName = "PrismaValidationError";
   } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
     statusCode = httpStatus.BAD_REQUEST;
@@ -37,12 +45,14 @@ export const globalErrorHandler = (
       errorMessage = "Foreign key constraint failed";
     } else if (err.code === "P2025") {
       statusCode = httpStatus.NOT_FOUND;
-      errorMessage = "Record not found or operation failed because a required record is missing";
+      errorMessage =
+        "Record not found or operation failed because a required record is missing";
     }
   } else if (err instanceof Prisma.PrismaClientInitializationError) {
     if (err.errorCode === "P1000") {
       statusCode = httpStatus.UNAUTHORIZED;
-      errorMessage = "Authentication failed against database server. Please check credentials.";
+      errorMessage =
+        "Authentication failed against database server. Please check credentials.";
     } else if (err.errorCode === "P1001") {
       statusCode = httpStatus.SERVICE_UNAVAILABLE;
       errorMessage = "Cannot reach database server";

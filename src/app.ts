@@ -8,7 +8,9 @@ import { swaggerDocument } from "./app/docs/swagger";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
+import { DriverRoutes } from "./app/module/driver/driver.route";
 import { UserRoutes } from "./app/module/user/user.route";
+import { VehicleRoutes } from "./app/module/vehicle/vehicle.route";
 
 const app: Application = express();
 
@@ -32,6 +34,8 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Application routes
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/users", UserRoutes);
+app.use("/api/v1/drivers", DriverRoutes);
+app.use("/api/v1/vehicles", VehicleRoutes);
 
 // Health check route
 app.get("/", async (_req: Request, res: Response) => {

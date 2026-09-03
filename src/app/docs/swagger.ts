@@ -1,4 +1,6 @@
+import { driverPaths, driverSchemas } from "./driver.swagger";
 import { userPaths, userSchemas } from "./user.swagger";
+import { vehiclePaths, vehicleSchemas } from "./vehicle.swagger";
 
 export const swaggerDocument = {
   openapi: "3.0.0",
@@ -30,6 +32,8 @@ export const swaggerDocument = {
     },
     schemas: {
       ...userSchemas,
+      ...driverSchemas,
+      ...vehicleSchemas,
       RegisterUserRequest: {
         type: "object",
         required: ["name", "email", "password"],
@@ -710,5 +714,7 @@ export const swaggerDocument = {
       },
     },
     ...userPaths,
+    ...driverPaths,
+    ...vehiclePaths,
   },
 };
