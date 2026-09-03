@@ -11,36 +11,31 @@ const router = Router();
 router.post(
   "/generate/:tripId",
   auth(Role.USER, Role.DRIVER, Role.SUPER_ADMIN),
-  InvoiceController.generateInvoiceForTrip
+  InvoiceController.generateInvoiceForTrip,
 );
 
 // User and driver invoice histories
 router.get(
   "/my-invoices",
   auth(Role.USER, Role.DRIVER),
-  InvoiceController.getMyInvoices
+  InvoiceController.getMyInvoices,
 );
 
 // Admin oversight
-router.get(
-  "/",
-  auth(Role.SUPER_ADMIN),
-  InvoiceController.getAllInvoices
-);
+router.get("/", auth(Role.SUPER_ADMIN), InvoiceController.getAllInvoices);
 
 // Specific invoice operations
 router.get(
   "/:id",
   auth(Role.USER, Role.DRIVER, Role.SUPER_ADMIN),
-  InvoiceController.getInvoiceById
+  InvoiceController.getInvoiceById,
 );
 
 router.patch(
   "/:id/pay",
   auth(Role.USER, Role.DRIVER, Role.SUPER_ADMIN),
   validateRequest(InvoiceValidation.payInvoiceSchema),
-  InvoiceController.payInvoice
+  InvoiceController.payInvoice,
 );
 
 export const InvoiceRoutes = router;
-

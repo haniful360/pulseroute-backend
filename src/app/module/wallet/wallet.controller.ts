@@ -43,29 +43,26 @@ const createPayoutRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getAllPayoutRequests = catchAsync(
-  async (req: Request, res: Response) => {
-    const result = await WalletService.getAllPayoutRequests(req.query);
+const getAllPayoutRequests = catchAsync(async (req: Request, res: Response) => {
+  const result = await WalletService.getAllPayoutRequests(req.query);
 
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Payout requests retrieved successfully",
-      meta: result.meta,
-      data: result.data,
-    });
-  }
-);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Payout requests retrieved successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
 
-const processPayoutRequest = catchAsync(
-  async (req: Request, res: Response) => {
-    const user = req.user as IRequestUser;
-    const { id } = req.params;
-    const result = await WalletService.processPayoutRequest(
-      user,
-      id as string,
-      req.body
-    );
+const processPayoutRequest = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const { id } = req.params;
+  const result = await WalletService.processPayoutRequest(
+    user,
+    id as string,
+    req.body,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -82,4 +79,3 @@ export const WalletController = {
   getAllPayoutRequests,
   processPayoutRequest,
 };
-

@@ -29,4 +29,3 @@ export const WalletValidation = {
   createPayoutRequestSchema,
   processPayoutSchema,
 };
-

@@ -30,4 +30,3 @@ export interface ITransactionFilterRequest {
   page?: string | number;
   limit?: string | number;
 }
-

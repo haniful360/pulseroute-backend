@@ -7,13 +7,15 @@ export const walletSchemas = {
         type: "number",
         minimum: 100,
         example: 5000.0,
-        description: "Requested withdrawal amount in BDT. Cannot exceed current wallet balance.",
+        description:
+          "Requested withdrawal amount in BDT. Cannot exceed current wallet balance.",
       },
       paymentMethod: {
         type: "string",
         enum: ["CASH", "STRIPE"],
         example: "CASH",
-        description: "Payout channel (e.g. CASH / Mobile Banking / Stripe Direct).",
+        description:
+          "Payout channel (e.g. CASH / Mobile Banking / Stripe Direct).",
       },
       accountNumber: {
         type: "string",
@@ -38,7 +40,8 @@ export const walletSchemas = {
       transactionReference: {
         type: "string",
         example: "TRX-BKASH-998822",
-        description: "Transaction ID or reference number from bank/MFS transfer.",
+        description:
+          "Transaction ID or reference number from bank/MFS transfer.",
       },
       rejectionReason: {
         type: "string",
@@ -51,7 +54,10 @@ export const walletSchemas = {
     properties: {
       success: { type: "boolean", example: true },
       statusCode: { type: "integer", example: 200 },
-      message: { type: "string", example: "Driver wallet retrieved successfully" },
+      message: {
+        type: "string",
+        example: "Driver wallet retrieved successfully",
+      },
       data: {
         type: "object",
         properties: {
@@ -71,7 +77,10 @@ export const walletSchemas = {
     properties: {
       success: { type: "boolean", example: true },
       statusCode: { type: "integer", example: 200 },
-      message: { type: "string", example: "Wallet transactions retrieved successfully" },
+      message: {
+        type: "string",
+        example: "Wallet transactions retrieved successfully",
+      },
       meta: {
         type: "object",
         properties: {
@@ -91,7 +100,10 @@ export const walletSchemas = {
             type: { type: "string", example: "TRIP_EARNING" },
             direction: { type: "string", example: "CREDIT" },
             balanceAfter: { type: "string", example: "14250.00" },
-            description: { type: "string", example: "Trip earning for Invoice INV-20260903-8A2F" },
+            description: {
+              type: "string",
+              example: "Trip earning for Invoice INV-20260903-8A2F",
+            },
             createdAt: { type: "string", format: "date-time" },
           },
         },
@@ -122,7 +134,10 @@ export const walletSchemas = {
     properties: {
       success: { type: "boolean", example: true },
       statusCode: { type: "integer", example: 200 },
-      message: { type: "string", example: "Payout requests retrieved successfully" },
+      message: {
+        type: "string",
+        example: "Payout requests retrieved successfully",
+      },
       meta: {
         type: "object",
         properties: {
@@ -177,7 +192,11 @@ export const walletPaths = {
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: "page", in: "query", schema: { type: "integer", default: 1 } },
-        { name: "limit", in: "query", schema: { type: "integer", default: 10 } },
+        {
+          name: "limit",
+          in: "query",
+          schema: { type: "integer", default: 10 },
+        },
         {
           name: "type",
           in: "query",
@@ -260,7 +279,11 @@ export const walletPaths = {
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: "page", in: "query", schema: { type: "integer", default: 1 } },
-        { name: "limit", in: "query", schema: { type: "integer", default: 10 } },
+        {
+          name: "limit",
+          in: "query",
+          schema: { type: "integer", default: 10 },
+        },
         {
           name: "status",
           in: "query",
@@ -318,4 +341,3 @@ export const walletPaths = {
     },
   },
 };
-

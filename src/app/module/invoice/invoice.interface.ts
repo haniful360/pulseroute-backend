@@ -1,7 +1,4 @@
-import {
-  PaymentMethod,
-  PaymentStatus,
-} from "../../../generated/prisma/enums";
+import { PaymentMethod, PaymentStatus } from "../../../generated/prisma/enums";
 
 export interface IPayInvoicePayload {
   paymentMethod: PaymentMethod;
@@ -19,4 +16,3 @@ export interface IInvoiceFilterRequest {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
-

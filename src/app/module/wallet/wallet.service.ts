@@ -52,7 +52,7 @@ const getMyWallet = async (authUser: IRequestUser) => {
 
 const getMyTransactions = async (
   authUser: IRequestUser,
-  filters: ITransactionFilterRequest
+  filters: ITransactionFilterRequest,
 ) => {
   const driver = await prisma.driver.findUnique({
     where: { userId: authUser.userId },
@@ -187,7 +187,7 @@ const processTripPayment = async (tx: any, invoice: any) => {
 
 const createPayoutRequest = async (
   authUser: IRequestUser,
-  payload: ICreatePayoutRequestPayload
+  payload: ICreatePayoutRequestPayload,
 ) => {
   const driver = await prisma.driver.findUnique({
     where: { userId: authUser.userId },
@@ -204,8 +204,8 @@ const createPayoutRequest = async (
     throw new AppError(
       httpStatus.BAD_REQUEST,
       `Insufficient wallet balance. Current balance is BDT ${currentBalance.toFixed(
-        2
-      )}, but requested BDT ${payload.amount.toFixed(2)}.`
+        2,
+      )}, but requested BDT ${payload.amount.toFixed(2)}.`,
     );
   }
 
@@ -220,7 +220,7 @@ const createPayoutRequest = async (
   if (pendingRequest) {
     throw new AppError(
       httpStatus.CONFLICT,
-      "You already have a pending payout request in progress. Please await its completion."
+      "You already have a pending payout request in progress. Please await its completion.",
     );
   }
 
@@ -291,7 +291,7 @@ const getAllPayoutRequests = async (filters: IPayoutFilterRequest) => {
 const processPayoutRequest = async (
   adminUser: IRequestUser,
   payoutId: string,
-  payload: IProcessPayoutPayload
+  payload: IProcessPayoutPayload,
 ) => {
   const payout = await prisma.payoutRequest.findUnique({
     where: { id: payoutId },
@@ -308,7 +308,7 @@ const processPayoutRequest = async (
   ) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      `Payout request has already been ${payout.status}. Cannot modify further.`
+      `Payout request has already been ${payout.status}. Cannot modify further.`,
     );
   }
 
@@ -321,8 +321,8 @@ const processPayoutRequest = async (
         throw new AppError(
           httpStatus.BAD_REQUEST,
           `Cannot approve payout. Driver wallet balance is BDT ${currentBalance.toFixed(
-            2
-          )}, which is lower than requested BDT ${amount.toFixed(2)}.`
+            2,
+          )}, which is lower than requested BDT ${amount.toFixed(2)}.`,
         );
       }
 
@@ -361,7 +361,8 @@ const processPayoutRequest = async (
         processedAt: new Date(),
         rejectionReason:
           payload.status === PayoutStatus.REJECTED
-            ? payload.rejectionReason || "Withdrawal request rejected by administration"
+            ? payload.rejectionReason ||
+              "Withdrawal request rejected by administration"
             : null,
         transactionReference: payload.transactionReference,
       },
@@ -381,4 +382,3 @@ export const WalletService = {
   getAllPayoutRequests,
   processPayoutRequest,
 };
-

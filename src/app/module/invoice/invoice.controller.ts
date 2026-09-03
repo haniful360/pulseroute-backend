@@ -5,17 +5,21 @@ import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "../auth/auth.interface";
 import { InvoiceService } from "./invoice.service";
 
-const generateInvoiceForTrip = catchAsync(async (req: Request, res: Response) => {
-  const { tripId } = req.params;
-  const result = await InvoiceService.generateInvoiceForTrip(tripId as string);
+const generateInvoiceForTrip = catchAsync(
+  async (req: Request, res: Response) => {
+    const { tripId } = req.params;
+    const result = await InvoiceService.generateInvoiceForTrip(
+      tripId as string,
+    );
 
-  sendResponse(res, {
-    statusCode: httpStatus.CREATED,
-    success: true,
-    message: "Invoice generated successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: "Invoice generated successfully",
+      data: result,
+    });
+  },
+);
 
 const payInvoice = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
@@ -74,4 +78,3 @@ export const InvoiceController = {
   getMyInvoices,
   getAllInvoices,
 };
-

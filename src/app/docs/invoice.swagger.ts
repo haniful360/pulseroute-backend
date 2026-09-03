@@ -18,7 +18,8 @@ export const invoiceSchemas = {
       gatewayTransactionId: {
         type: "string",
         example: "ch_3Mtwx1LkdIwHu7ix0snNq8GS",
-        description: "Transaction ID returned from payment gateway if paid online.",
+        description:
+          "Transaction ID returned from payment gateway if paid online.",
       },
       paymentGateway: {
         type: "string",
@@ -142,7 +143,11 @@ export const invoicePaths = {
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: "page", in: "query", schema: { type: "integer", default: 1 } },
-        { name: "limit", in: "query", schema: { type: "integer", default: 10 } },
+        {
+          name: "limit",
+          in: "query",
+          schema: { type: "integer", default: 10 },
+        },
         { name: "searchTerm", in: "query", schema: { type: "string" } },
         {
           name: "paymentStatus",
@@ -163,7 +168,9 @@ export const invoicePaths = {
           description: "Invoices retrieved successfully",
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/PaginatedInvoicesResponse" },
+              schema: {
+                $ref: "#/components/schemas/PaginatedInvoicesResponse",
+              },
             },
           },
         },
@@ -241,4 +248,3 @@ export const invoicePaths = {
     },
   },
 };
-

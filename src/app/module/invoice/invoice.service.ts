@@ -38,7 +38,7 @@ const generateInvoiceForTrip = async (tripId: string) => {
   if (!trip.driverId) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Cannot generate an invoice for a trip without an assigned driver."
+      "Cannot generate an invoice for a trip without an assigned driver.",
     );
   }
 
@@ -51,19 +51,15 @@ const generateInvoiceForTrip = async (tripId: string) => {
   const distanceFare = Number(
     (
       (trip.distanceKm || 1.0) * Number(pricingConfig?.perKmRate || 50.0)
-    ).toFixed(2)
+    ).toFixed(2),
   );
   const totalAmount = trip.estimatedFare
     ? Number(trip.estimatedFare)
     : Number((baseFare + distanceFare).toFixed(2));
 
   const commissionRate = pricingConfig?.platformCommissionRate || 0.12;
-  const platformCommission = Number(
-    (totalAmount * commissionRate).toFixed(2)
-  );
-  const driverEarning = Number(
-    (totalAmount - platformCommission).toFixed(2)
-  );
+  const platformCommission = Number((totalAmount * commissionRate).toFixed(2));
+  const driverEarning = Number((totalAmount - platformCommission).toFixed(2));
 
   const invoiceNumber = generateInvoiceNumber();
 
@@ -98,7 +94,7 @@ const generateInvoiceForTrip = async (tripId: string) => {
 const payInvoice = async (
   authUser: IRequestUser,
   invoiceId: string,
-  payload: IPayInvoicePayload
+  payload: IPayInvoicePayload,
 ) => {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
@@ -112,7 +108,7 @@ const payInvoice = async (
   if (invoice.paymentStatus === PaymentStatus.PAID) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "This invoice has already been settled and marked as PAID."
+      "This invoice has already been settled and marked as PAID.",
     );
   }
 
@@ -124,7 +120,7 @@ const payInvoice = async (
     if (!patient || patient.id !== invoice.patientId) {
       throw new AppError(
         httpStatus.FORBIDDEN,
-        "You do not have authorization to settle this invoice"
+        "You do not have authorization to settle this invoice",
       );
     }
   } else if (authUser.role === Role.DRIVER) {
@@ -134,7 +130,7 @@ const payInvoice = async (
     if (!driver || driver.id !== invoice.driverId) {
       throw new AppError(
         httpStatus.FORBIDDEN,
-        "You do not have authorization to settle this invoice"
+        "You do not have authorization to settle this invoice",
       );
     }
   }
@@ -338,4 +334,3 @@ export const InvoiceService = {
   getMyInvoices,
   getAllInvoices,
 };
-
