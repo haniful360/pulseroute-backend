@@ -18,10 +18,10 @@ export default {
   redis_password: process.env.REDIS_PASSWORD,
   redis_host: process.env.REDIS_HOST,
   redis_port: Number(process.env.REDIS_PORT) || 6379,
-  smtp_host: process.env.SMTP_HOST,
-  smtp_port: Number(process.env.SMTP_PORT),
+  smtp_host: process.env.SMTP_HOST || "smtp.gmail.com",
+  smtp_port: Number(process.env.SMTP_PORT) || 587,
   smtp_user: process.env.SMTP_USER,
   smtp_password: process.env.SMTP_PASSWORD,
-  smtp_sender: process.env.SMTP_SENDER,
+  smtp_sender: process.env.SMTP_SENDER || `PulseRoute Support <${process.env.SMTP_USER}>`,
   google_client_id: process.env.GOOGLE_CLIENT_ID,
 };

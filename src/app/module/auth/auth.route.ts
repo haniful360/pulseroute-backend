@@ -9,7 +9,11 @@ const router = Router();
 router.post("/register", AuthController.registerUser);
 router.post("/register-driver", AuthController.registerDriver);
 router.post("/verify-otp", AuthController.verifyOtp);
+router.post("/verify-user-otp", AuthController.verifyOtp);
 router.post("/resend-otp", AuthController.resendOtp);
+
+// Google Sign-In / Login
+router.post("/google-login", AuthController.googleLogin);
 
 // Universal dynamic login
 router.post("/login", AuthController.loginUser);

@@ -6,6 +6,7 @@ import { JwtPayload } from "jsonwebtoken";
 import path from "path";
 import {
   AmbulanceType,
+  AuthProvider,
   DriverVerificationStatus,
   DutyStatus,
   Role,
@@ -14,17 +15,19 @@ import {
 } from "../../../generated/prisma/enums";
 import config from "../../config";
 import AppError from "../../errors/AppError";
+import { googleClient } from "../../lib/googleAuth";
 import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
 import { redisClient } from "../../lib/redis";
 import { jwtUtils } from "../../utils/jwt";
 import {
   IChangePasswordPayload,
+  IGoogleLoginPayload,
   ILoginUserPayload,
   IRegisterDriverPayload,
   IRegisterUserPayload,
-  IResendOtpPayload,
   IRequestUser,
+  IResendOtpPayload,
   IVerifyOtpPayload,
 } from "./auth.interface";
 
@@ -63,8 +66,50 @@ const sendVerificationEmail = async (
   } catch (error) {
     console.error("Nodemailer Error sending OTP email:", error);
     if (config.node_env === "development") {
-      console.log(` [DEV MODE] OTP for ${email}: ${otp}`);
+      console.log(`\n==============================================`);
+      console.log(`🔑 [DEV MODE] OTP for ${email}: ${otp}`);
+      console.log(`==============================================\n`);
     }
+  }
+};
+
+const sendLoginWelcomeEmail = async (
+  email: string,
+  name: string,
+  role: Role,
+  authMethod: "Google Sign-In" | "Email & Password"
+) => {
+  const templatePath = path.join(
+    process.cwd(),
+    "src",
+    "app",
+    "templates",
+    "login-welcome.ejs"
+  );
+
+  const loginTime = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  try {
+    const html = await ejs.renderFile(templatePath, {
+      name,
+      email,
+      role,
+      authMethod,
+      loginTime,
+    });
+
+    await transporter.sendMail({
+      from: config.smtp_sender,
+      to: email,
+      subject: `PulseRoute — Welcome Back, ${name}!`,
+      text: `Hello ${name}, you have successfully logged in to PulseRoute via ${authMethod} at ${loginTime}.`,
+      html,
+    });
+  } catch (error) {
+    console.error("Nodemailer Error sending login welcome email:", error);
   }
 };
 
@@ -82,7 +127,7 @@ const registerUser = async (payload: IRegisterUserPayload) => {
     );
   }
 
-  const saltRounds = Number(config.bcrypt_salt_rounds);
+  const saltRounds = Number(config.bcrypt_salt_rounds) || 10;
   const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
 
   const otp = crypto.randomInt(100000, 1000000).toString();
@@ -261,6 +306,9 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
       config.jwt_refresh_expires_in
     );
 
+    // Send welcome email upon successful activation
+    await sendLoginWelcomeEmail(user.email, user.name, user.role, "Email & Password");
+
     return {
       type: "USER" as const,
       user,
@@ -389,6 +437,9 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
       config.jwt_refresh_expires_in
     );
 
+    // Send welcome email upon driver verification
+    await sendLoginWelcomeEmail(result.user.email, result.user.name, result.user.role, "Email & Password");
+
     return {
       type: "DRIVER" as const,
       user: result.user,
@@ -457,6 +508,197 @@ const resendOtp = async (payload: IResendOtpPayload) => {
   );
 };
 
+const googleLogin = async (payload: IGoogleLoginPayload) => {
+  const idToken = payload.idToken || payload.token;
+
+  if (!idToken) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Google ID token is required in body (as idToken or token)"
+    );
+  }
+
+  let googleIdTokenPayload = null;
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: config.google_client_id,
+    });
+    googleIdTokenPayload = ticket.getPayload();
+  } catch (error) {
+    console.error("Google ID token verification failed:", error);
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Google ID token verification failed. Please try signing in again."
+    );
+  }
+
+  if (!googleIdTokenPayload) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Google ID token payload is missing"
+    );
+  }
+
+  const { email, name, sub: googleId, picture } = googleIdTokenPayload;
+
+  if (!email || !name || !googleId) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Google ID token payload is missing required fields (email, name, sub)"
+    );
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: {
+      patient: true,
+      driver: {
+        include: {
+          currentVehicle: true,
+          wallet: true,
+        },
+      },
+      admin: true,
+    },
+  });
+
+  let user = existingUser;
+
+  if (existingUser) {
+    if (existingUser.status === UserStatus.BLOCKED) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        "Your account has been blocked. Please contact support."
+      );
+    }
+
+    if (
+      existingUser.isDeleted ||
+      existingUser.status === UserStatus.DELETED
+    ) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        "This account has been permanently deleted"
+      );
+    }
+
+    // If existing user does not have googleId linked, link it now
+    if (!existingUser.googleId) {
+      user = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          googleId,
+          emailVerified: true,
+        },
+        include: {
+          patient: true,
+          driver: {
+            include: {
+              currentVehicle: true,
+              wallet: true,
+            },
+          },
+          admin: true,
+        },
+      });
+    }
+  } else {
+    // Register new User (Role: USER / Patient) via Google Sign-In
+    user = await prisma.user.create({
+      data: {
+        name,
+        email: normalizedEmail,
+        googleId,
+        authProvider: AuthProvider.GOOGLE,
+        role: Role.USER,
+        status: UserStatus.ACTIVE,
+        emailVerified: true,
+        patient: {
+          create: {
+            name,
+            email: normalizedEmail,
+            profilePhoto: picture,
+          },
+        },
+      },
+      include: {
+        patient: true,
+        driver: {
+          include: {
+            currentVehicle: true,
+            wallet: true,
+          },
+        },
+        admin: true,
+      },
+    });
+  }
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User could not be authenticated");
+  }
+
+  // Send login welcome email with login details
+  await sendLoginWelcomeEmail(user.email, user.name, user.role, "Google Sign-In");
+
+  // Extract dynamic profile
+  let profile = null;
+  if (user.role === Role.USER) {
+    profile = user.patient;
+  } else if (user.role === Role.DRIVER) {
+    profile = user.driver;
+  } else if (user.role === Role.SUPER_ADMIN) {
+    profile = user.admin;
+  }
+
+  const jwtPayload = {
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+
+  const accessToken = jwtUtils.createToken(
+    jwtPayload,
+    config.jwt_access_secret,
+    config.jwt_access_expires_in
+  );
+
+  const refreshToken = jwtUtils.createToken(
+    jwtPayload,
+    config.jwt_refresh_secret,
+    config.jwt_refresh_expires_in
+  );
+
+  const {
+    password: _pass,
+    patient: _pat,
+    driver: _drv,
+    admin: _adm,
+    ...sanitizedUser
+  } = user;
+
+  const roleTitle =
+    user.role === Role.SUPER_ADMIN
+      ? "Super Administrator"
+      : user.role === Role.DRIVER
+      ? "Ambulance Driver"
+      : "User";
+
+  return {
+    user: sanitizedUser,
+    profile,
+    accessToken,
+    refreshToken,
+    welcomeMessage: `Welcome to PulseRoute, ${user.name}! Logged in successfully via Google as ${roleTitle}.`,
+  };
+};
+
 const loginUser = async (payload: ILoginUserPayload) => {
   const email = payload.email.trim().toLowerCase();
 
@@ -507,6 +749,9 @@ const loginUser = async (payload: ILoginUserPayload) => {
   if (!isPasswordMatched) {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password");
   }
+
+  // Send login welcome email with login details
+  await sendLoginWelcomeEmail(user.email, user.name, user.role, "Email & Password");
 
   // Extract relevant profile dynamically based on user role
   let profile = null;
@@ -715,6 +960,7 @@ export const AuthService = {
   registerDriver,
   verifyOtp,
   resendOtp,
+  googleLogin,
   loginUser,
   getMe,
   changePassword,

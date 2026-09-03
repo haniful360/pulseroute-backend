@@ -78,6 +78,34 @@ const resendOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const googleLogin = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await AuthService.googleLogin(payload);
+  const { accessToken, refreshToken, user, profile, welcomeMessage } = result;
+
+  res.cookie("accessToken", accessToken, {
+    ...cookieOptions,
+    maxAge: 1000 * 60 * 60 * 24,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOptions,
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: welcomeMessage || "Logged in successfully via Google",
+    data: {
+      user,
+      profile,
+      accessToken,
+      refreshToken,
+    },
+  });
+});
+
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.loginUser(payload);
@@ -184,6 +212,7 @@ export const AuthController = {
   registerDriver,
   verifyOtp,
   resendOtp,
+  googleLogin,
   loginUser,
   getMe,
   changePassword,

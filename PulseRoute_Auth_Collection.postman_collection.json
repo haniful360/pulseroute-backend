@@ -1,324 +1,446 @@
 {
-  "info": {
-    "_postman_id": "pulseroute-auth-collection-id",
-    "name": "PulseRoute - Auth API Collection",
-    "description": "Postman collection for testing PulseRoute Emergency Ambulance Dispatch Platform authentication APIs (Redis OTP Verification, User, Driver, Super Admin)",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "item": [
-    {
-      "name": "1. Register User (Patient) - Send OTP",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"name\": \"Rahim Ahmed\",\n    \"email\": \"rahim@example.com\",\n    \"password\": \"password123\",\n    \"contactNumber\": \"+8801711223344\",\n    \"address\": \"House 12, Road 5, Dhanmondi, Dhaka\",\n    \"emergencyContactName\": \"Karim Ahmed\",\n    \"emergencyContactNumber\": \"+8801711223355\",\n    \"bloodGroup\": \"O+\",\n    \"gender\": \"MALE\",\n    \"dateOfBirth\": \"1995-05-15\",\n    \"medicalHistory\": \"Asthma, allergic to penicillin\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/register",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "register"]
-        }
-      }
-    },
-    {
-      "name": "2. Register Driver - Send OTP",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"name\": \"Kamal Hossain\",\n    \"email\": \"kamal.driver@example.com\",\n    \"password\": \"password123\",\n    \"contactNumber\": \"+8801811223344\",\n    \"licenseNumber\": \"DL-DHAKA-2024-9988\",\n    \"licenseExpiry\": \"2028-12-31\",\n    \"nidNumber\": \"19901234567890123\",\n    \"experienceYears\": 5,\n    \"vehicleNumber\": \"DHAKA-METRO-CHA-11-2233\",\n    \"ambulanceType\": \"AC\",\n    \"model\": \"Toyota HiAce Ambulance\",\n    \"manufacturer\": \"Toyota\",\n    \"year\": 2022,\n    \"hasOxygen\": true,\n    \"hasVentilator\": false,\n    \"hasDefibrillator\": false,\n    \"hasSuctionMachine\": true,\n    \"equipmentDetails\": \"Portable oxygen, stretcher, emergency first aid kit\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/register-driver",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "register-driver"]
-        }
-      }
-    },
-    {
-      "name": "3. Verify OTP (Activate User / Driver)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 201) {",
-              "    var jsonData = pm.response.json();",
-              "    if (jsonData.data && jsonData.data.accessToken) {",
-              "        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
-              "        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
-              "    }",
-              "}"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"rahim@example.com\",\n    \"otp\": \"123456\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/verify-otp",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "verify-otp"]
-        }
-      }
-    },
-    {
-      "name": "4. Resend OTP",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"rahim@example.com\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/resend-otp",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "resend-otp"]
-        }
-      }
-    },
-    {
-      "name": "5. Login - Super Admin",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 200) {",
-              "    var jsonData = pm.response.json();",
-              "    if (jsonData.data && jsonData.data.accessToken) {",
-              "        pm.environment.set(\"superAdminToken\", jsonData.data.accessToken);",
-              "        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
-              "        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
-              "    }",
-              "}"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"haniful@gmail.com\",\n    \"password\": \"haniful123\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/login",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "login"]
-        }
-      }
-    },
-    {
-      "name": "6. Login - User (Patient)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 200) {",
-              "    var jsonData = pm.response.json();",
-              "    if (jsonData.data && jsonData.data.accessToken) {",
-              "        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
-              "        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
-              "    }",
-              "}"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"rahim@example.com\",\n    \"password\": \"password123\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/login",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "login"]
-        }
-      }
-    },
-    {
-      "name": "7. Login - Driver",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 200) {",
-              "    var jsonData = pm.response.json();",
-              "    if (jsonData.data && jsonData.data.accessToken) {",
-              "        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
-              "        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
-              "    }",
-              "}"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"kamal.driver@example.com\",\n    \"password\": \"password123\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/login",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "login"]
-        }
-      }
-    },
-    {
-      "name": "8. Get Current User Profile (Me)",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/me",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "me"]
-        }
-      }
-    },
-    {
-      "name": "9. Change Password",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"oldPassword\": \"password123\",\n    \"newPassword\": \"newpassword123\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/change-password",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "change-password"]
-        }
-      }
-    },
-    {
-      "name": "10. Refresh Token",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "if (pm.response.code === 200) {",
-              "    var jsonData = pm.response.json();",
-              "    if (jsonData.data && jsonData.data.accessToken) {",
-              "        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
-              "        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
-              "    }",
-              "}"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/refresh-token",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "refresh-token"]
-        }
-      }
-    },
-    {
-      "name": "11. Logout",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/v1/auth/logout",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "auth", "logout"]
-        }
-      }
-    }
-  ],
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5000"
-    }
-  ]
+	"info": {
+		"_postman_id": "pulseroute-auth-collection-id",
+		"name": "PulseRoute - Auth API Collection",
+		"description": "Postman collection for testing PulseRoute Emergency Ambulance Dispatch Platform authentication APIs (Redis OTP Verification, Google OAuth Login, User, Driver, Super Admin)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Register User (Patient) - Send OTP",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Rahim Ahmed\",\n    \"email\": \"rahim@example.com\",\n    \"password\": \"password123\",\n    \"contactNumber\": \"+8801711223344\",\n    \"address\": \"House 12, Road 5, Dhanmondi, Dhaka\",\n    \"emergencyContactName\": \"Karim Ahmed\",\n    \"emergencyContactNumber\": \"+8801711223355\",\n    \"bloodGroup\": \"O+\",\n    \"gender\": \"MALE\",\n    \"dateOfBirth\": \"1995-05-15\",\n    \"medicalHistory\": \"Asthma, allergic to penicillin\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/register",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"register"
+					]
+				}
+			}
+		},
+		{
+			"name": "2. Register Driver - Send OTP",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Kamal Hossain\",\n    \"email\": \"kamal.driver@example.com\",\n    \"password\": \"password123\",\n    \"contactNumber\": \"+8801811223344\",\n    \"licenseNumber\": \"DL-DHAKA-2024-9988\",\n    \"licenseExpiry\": \"2028-12-31\",\n    \"nidNumber\": \"19901234567890123\",\n    \"experienceYears\": 5,\n    \"vehicleNumber\": \"DHAKA-METRO-CHA-11-2233\",\n    \"ambulanceType\": \"AC\",\n    \"model\": \"Toyota HiAce Ambulance\",\n    \"manufacturer\": \"Toyota\",\n    \"year\": 2022,\n    \"hasOxygen\": true,\n    \"hasVentilator\": false,\n    \"hasDefibrillator\": false,\n    \"hasSuctionMachine\": true,\n    \"equipmentDetails\": \"Portable oxygen, stretcher, emergency first aid kit\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/register-driver",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"register-driver"
+					]
+				}
+			}
+		},
+		{
+			"name": "3. Verify OTP (Activate User / Driver)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 201) {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.accessToken) {",
+							"        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+							"        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"rahim@example.com\",\n    \"otp\": \"123456\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/verify-otp",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"verify-otp"
+					]
+				}
+			}
+		},
+		{
+			"name": "4. Resend OTP",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"rahim@example.com\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/resend-otp",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"resend-otp"
+					]
+				}
+			}
+		},
+		{
+			"name": "5. Google Sign-In / Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.accessToken) {",
+							"        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+							"        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"idToken\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjE3NGI2...\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/google-login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"google-login"
+					]
+				}
+			}
+		},
+		{
+			"name": "6. Login - Super Admin",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.accessToken) {",
+							"        pm.environment.set(\"superAdminToken\", jsonData.data.accessToken);",
+							"        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+							"        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"haniful@gmail.com\",\n    \"password\": \"haniful123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			}
+		},
+		{
+			"name": "7. Login - User (Patient)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.accessToken) {",
+							"        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+							"        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"rahim@example.com\",\n    \"password\": \"password123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			}
+		},
+		{
+			"name": "8. Login - Driver",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.accessToken) {",
+							"        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+							"        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"kamal.driver@example.com\",\n    \"password\": \"password123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			}
+		},
+		{
+			"name": "9. Get Current User Profile (Me)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/me",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"me"
+					]
+				}
+			}
+		},
+		{
+			"name": "10. Change Password",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{accessToken}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"oldPassword\": \"password123\",\n    \"newPassword\": \"newpassword123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/change-password",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"change-password"
+					]
+				}
+			}
+		},
+		{
+			"name": "11. Refresh Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.accessToken) {",
+							"        pm.environment.set(\"accessToken\", jsonData.data.accessToken);",
+							"        pm.environment.set(\"refreshToken\", jsonData.data.refreshToken);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/refresh-token",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"refresh-token"
+					]
+				}
+			}
+		},
+		{
+			"name": "12. Logout",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/logout",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"logout"
+					]
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000"
+		}
+	]
 }

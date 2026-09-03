@@ -4,7 +4,7 @@ export const swaggerDocument = {
     title: "PulseRoute — Emergency Ambulance Dispatch Platform API",
     version: "1.0.0",
     description:
-      "Comprehensive REST API Documentation for PulseRoute Emergency Ambulance Dispatch Backend System.\n\n### Core Roles:\n- **USER (Patient):** Emergency ambulance booking, live status tracking, invoice & billing.\n- **DRIVER:** Duty status management (ONLINE/OFFLINE), emergency trip acceptance & lifecycle updates.\n- **SUPER_ADMIN:** Driver/vehicle verification, platform pricing & commission configuration, system analytics.\n\n### Authentication Flow:\n1. User or Driver calls `/register` or `/register-driver` $\\rightarrow$ 6-digit OTP is sent to email.\n2. Client calls `/verify-otp` with `{ email, otp }` to complete registration and receive JWT tokens.",
+      "Comprehensive REST API Documentation for PulseRoute Emergency Ambulance Dispatch Backend System.\n\n### Core Roles:\n- **USER (Patient):** Emergency ambulance booking, live status tracking, invoice & billing.\n- **DRIVER:** Duty status management (ONLINE/OFFLINE), emergency trip acceptance & lifecycle updates.\n- **SUPER_ADMIN:** Driver/vehicle verification, platform pricing & commission configuration, system analytics.\n\n### Authentication Methods:\n1. **Email & Password + Redis OTP:** Register $\\rightarrow$ receive 6-digit OTP $\\rightarrow$ verify to activate.\n2. **Google Sign-In:** Authenticate with Google OAuth ID Token via `/api/v1/auth/google-login`.",
     contact: {
       name: "PulseRoute Support",
       email: "support@pulseroute.com",
@@ -144,6 +144,21 @@ export const swaggerDocument = {
           },
         },
       },
+      GoogleLoginRequest: {
+        type: "object",
+        required: ["idToken"],
+        properties: {
+          idToken: {
+            type: "string",
+            example: "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...",
+            description: "Google OAuth ID Token received from Google Sign-In SDK",
+          },
+          token: {
+            type: "string",
+            description: "Alternative parameter name for Google ID token",
+          },
+        },
+      },
       LoginRequest: {
         type: "object",
         required: ["email", "password"],
@@ -214,7 +229,7 @@ export const swaggerDocument = {
     {
       name: "Auth",
       description:
-        "User, Driver, and Super Admin Authentication, Redis OTP & Profile endpoints",
+        "User, Driver, and Super Admin Authentication, Redis OTP, Google OAuth & Profile endpoints",
     },
     { name: "Health", description: "Server Health Check" },
   ],
@@ -383,6 +398,42 @@ export const swaggerDocument = {
           },
           404: {
             description: "No pending registration found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/StandardErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/v1/auth/google-login": {
+      post: {
+        tags: ["Auth"],
+        summary: "Google Sign-In / Login",
+        description:
+          "Verifies Google OAuth ID Token, creates user (Patient) if not existing and sends attractive welcome email, or logs in existing user and returns JWT tokens.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/GoogleLoginRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Google Login successful",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/StandardSuccessResponse",
+                },
+              },
+            },
+          },
+          401: {
+            description: "Google ID token verification failed",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/StandardErrorResponse" },

@@ -51,6 +51,11 @@ export interface ILoginUserPayload {
   password: string;
 }
 
+export interface IGoogleLoginPayload {
+  token?: string;
+  idToken?: string;
+}
+
 export interface IChangePasswordPayload {
   oldPassword: string;
   newPassword: string;
