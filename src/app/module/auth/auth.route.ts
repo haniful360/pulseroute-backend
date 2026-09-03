@@ -12,6 +12,10 @@ router.post("/verify-otp", AuthController.verifyOtp);
 router.post("/verify-user-otp", AuthController.verifyOtp);
 router.post("/resend-otp", AuthController.resendOtp);
 
+// Password recovery routes
+router.post("/forgot-password", AuthController.forgotPassword);
+router.post("/reset-password", AuthController.resetPassword);
+
 // Google Sign-In / Login
 router.post("/google-login", AuthController.googleLogin);
 

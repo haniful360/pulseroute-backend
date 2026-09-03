@@ -4,7 +4,7 @@ export const swaggerDocument = {
     title: "PulseRoute — Emergency Ambulance Dispatch Platform API",
     version: "1.0.0",
     description:
-      "Comprehensive REST API Documentation for PulseRoute Emergency Ambulance Dispatch Backend System.\n\n### Core Roles:\n- **USER (Patient):** Emergency ambulance booking, live status tracking, invoice & billing.\n- **DRIVER:** Duty status management (ONLINE/OFFLINE), emergency trip acceptance & lifecycle updates.\n- **SUPER_ADMIN:** Driver/vehicle verification, platform pricing & commission configuration, system analytics.\n\n### Authentication Methods:\n1. **Email & Password + Redis OTP:** Register $\\rightarrow$ receive 6-digit OTP $\\rightarrow$ verify to activate.\n2. **Google Sign-In:** Authenticate with Google OAuth ID Token via `/api/v1/auth/google-login`.",
+      "Comprehensive REST API Documentation for PulseRoute Emergency Ambulance Dispatch Backend System.\n\n### Core Roles:\n- **USER (Patient):** Emergency ambulance booking, live status tracking, invoice & billing.\n- **DRIVER:** Duty status management (ONLINE/OFFLINE), emergency trip acceptance & lifecycle updates.\n- **SUPER_ADMIN:** Driver/vehicle verification, platform pricing & commission configuration, system analytics.\n\n### Authentication Methods:\n1. **Email & Password + Redis OTP:** Register $\\rightarrow$ receive 6-digit OTP $\\rightarrow$ verify to activate.\n2. **Google Sign-In:** Authenticate with Google OAuth ID Token via `/api/v1/auth/google-login`.\n3. **Forgot & Reset Password:** Request 6-digit Reset OTP via email $\\rightarrow$ reset password securely.",
     contact: {
       name: "PulseRoute Support",
       email: "support@pulseroute.com",
@@ -101,19 +101,19 @@ export const swaggerDocument = {
           vehicleNumber: { type: "string", example: "DHAKA-METRO-CHA-11-2233" },
           ambulanceType: {
             type: "string",
-            enum: ["BASIC", "AC", "ICU", "FREEZER", "NEONATAL"],
-            example: "AC",
+            enum: ["AC", "NON_AC", "ICU", "FREEZER", "NEONATAL", "BASIC"],
+            example: "ICU",
           },
-          model: { type: "string", example: "Toyota HiAce Ambulance" },
+          model: { type: "string", example: "Toyota HiAce Grandia Ambulance" },
           manufacturer: { type: "string", example: "Toyota" },
           year: { type: "integer", example: 2022 },
           hasOxygen: { type: "boolean", example: true },
-          hasVentilator: { type: "boolean", example: false },
-          hasDefibrillator: { type: "boolean", example: false },
+          hasVentilator: { type: "boolean", example: true },
+          hasDefibrillator: { type: "boolean", example: true },
           hasSuctionMachine: { type: "boolean", example: true },
           equipmentDetails: {
             type: "string",
-            example: "Portable oxygen cylinder, stretcher, first aid kit",
+            example: "Portable ICU ventilator, defibrillator, high-flow oxygen",
           },
         },
       },
@@ -126,11 +126,7 @@ export const swaggerDocument = {
             format: "email",
             example: "rahim@example.com",
           },
-          otp: {
-            type: "string",
-            example: "123456",
-            description: "6-digit verification code received in email",
-          },
+          otp: { type: "string", example: "492817" },
         },
       },
       ResendOtpRequest: {
@@ -144,18 +140,46 @@ export const swaggerDocument = {
           },
         },
       },
+      ForgotPasswordRequest: {
+        type: "object",
+        required: ["email"],
+        properties: {
+          email: {
+            type: "string",
+            format: "email",
+            example: "rahim@example.com",
+          },
+        },
+      },
+      ResetPasswordRequest: {
+        type: "object",
+        required: ["email", "otp", "newPassword"],
+        properties: {
+          email: {
+            type: "string",
+            format: "email",
+            example: "rahim@example.com",
+          },
+          otp: { type: "string", example: "492817" },
+          newPassword: {
+            type: "string",
+            format: "password",
+            example: "newStrongPassword123",
+          },
+        },
+      },
       GoogleLoginRequest: {
         type: "object",
-        required: ["idToken"],
         properties: {
           idToken: {
             type: "string",
-            example: "eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...",
-            description: "Google OAuth ID Token received from Google Sign-In SDK",
+            description: "Google OAuth ID Token obtained from Google Sign-In SDK",
+            example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE3NGI2...",
           },
           token: {
             type: "string",
-            description: "Alternative parameter name for Google ID token",
+            description: "Alternative parameter name for Google ID Token",
+            example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE3NGI2...",
           },
         },
       },
@@ -304,7 +328,7 @@ export const swaggerDocument = {
         tags: ["Auth"],
         summary: "Register Driver - Step 1: Send OTP",
         description:
-          "Initiates registration for an ambulance driver, caches application payload in Redis for 5 minutes, and sends an attractive verification email.",
+          "Validates driver license, vehicle number, hashes password, stores pending driver data & 6-digit OTP in Redis for 5 minutes, and dispatches verification email.",
         requestBody: {
           required: true,
           content: {
@@ -325,7 +349,7 @@ export const swaggerDocument = {
             },
           },
           400: {
-            description: "Duplicate license or vehicle number",
+            description: "Duplicate email, license, or vehicle number",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/StandardErrorResponse" },
@@ -338,9 +362,9 @@ export const swaggerDocument = {
     "/api/v1/auth/verify-otp": {
       post: {
         tags: ["Auth"],
-        summary: "Verify OTP - Step 2: Activate Account",
+        summary: "Verify OTP & Activate Account - Step 2",
         description:
-          "Verifies the 6-digit OTP from Redis, writes the User & Profile (Patient or Driver with Wallet) to Postgres, and returns JWT access & refresh tokens.",
+          "Validates the 6-digit OTP from Redis. Automatically creates User + Patient (or User + Driver + Vehicle + Wallet in a transaction), sets HTTP-only cookies, and returns JWT tokens.",
         requestBody: {
           required: true,
           content: {
@@ -351,7 +375,7 @@ export const swaggerDocument = {
         },
         responses: {
           201: {
-            description: "Email verified and registration completed successfully",
+            description: "Account activated and tokens issued successfully",
             content: {
               "application/json": {
                 schema: {
@@ -376,7 +400,7 @@ export const swaggerDocument = {
         tags: ["Auth"],
         summary: "Resend Verification OTP",
         description:
-          "Generates a fresh OTP and resets the 5-minute Redis TTL for an existing pending registration.",
+          "Generates a fresh 6-digit OTP, resets the 5-minute TTL in Redis, and sends a new verification email.",
         requestBody: {
           required: true,
           content: {
@@ -387,7 +411,7 @@ export const swaggerDocument = {
         },
         responses: {
           200: {
-            description: "New OTP sent to email",
+            description: "New OTP sent successfully",
             content: {
               "application/json": {
                 schema: {
@@ -398,6 +422,78 @@ export const swaggerDocument = {
           },
           404: {
             description: "No pending registration found",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/StandardErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/v1/auth/forgot-password": {
+      post: {
+        tags: ["Auth"],
+        summary: "Forgot Password - Send Reset OTP",
+        description:
+          "Generates a secure 6-digit password reset OTP stored in Redis for 5 minutes and sends a password reset email.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ForgotPasswordRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Password reset OTP sent to email",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/StandardSuccessResponse",
+                },
+              },
+            },
+          },
+          404: {
+            description: "No account found with this email",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/StandardErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/v1/auth/reset-password": {
+      post: {
+        tags: ["Auth"],
+        summary: "Reset Password - Verify OTP & Set New Password",
+        description:
+          "Verifies the 6-digit reset OTP from Redis, updates the user's password with secure bcrypt hash, deletes OTP, and sends a security confirmation email.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/ResetPasswordRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Password reset successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/StandardSuccessResponse",
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid or expired OTP",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/StandardErrorResponse" },

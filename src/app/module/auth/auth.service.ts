@@ -22,12 +22,14 @@ import { redisClient } from "../../lib/redis";
 import { jwtUtils } from "../../utils/jwt";
 import {
   IChangePasswordPayload,
+  IForgotPasswordPayload,
   IGoogleLoginPayload,
   ILoginUserPayload,
   IRegisterDriverPayload,
   IRegisterUserPayload,
   IRequestUser,
   IResendOtpPayload,
+  IResetPasswordPayload,
   IVerifyOtpPayload,
 } from "./auth.interface";
 
@@ -70,6 +72,77 @@ const sendVerificationEmail = async (
       console.log(`🔑 [DEV MODE] OTP for ${email}: ${otp}`);
       console.log(`==============================================\n`);
     }
+  }
+};
+
+const sendResetPasswordEmail = async (
+  email: string,
+  name: string,
+  otp: string
+) => {
+  const templatePath = path.join(
+    process.cwd(),
+    "src",
+    "app",
+    "templates",
+    "reset-password-otp.ejs"
+  );
+
+  const html = await ejs.renderFile(templatePath, {
+    otp,
+    name,
+    email,
+    expirationMinutes: OTP_EXPIRATION_SECONDS / 60,
+  });
+
+  try {
+    await transporter.sendMail({
+      from: config.smtp_sender,
+      to: email,
+      subject: "PulseRoute — Password Reset Code",
+      text: `Your PulseRoute password reset code is: ${otp}. It will expire in 5 minutes.`,
+      html,
+    });
+  } catch (error) {
+    console.error("Nodemailer Error sending reset password email:", error);
+    if (config.node_env === "development") {
+      console.log(`\n==============================================`);
+      console.log(`🔑 [DEV MODE] Reset OTP for ${email}: ${otp}`);
+      console.log(`==============================================\n`);
+    }
+  }
+};
+
+const sendPasswordChangedEmail = async (email: string, name: string) => {
+  const templatePath = path.join(
+    process.cwd(),
+    "src",
+    "app",
+    "templates",
+    "password-changed.ejs"
+  );
+
+  const changedTime = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  try {
+    const html = await ejs.renderFile(templatePath, {
+      name,
+      email,
+      changedTime,
+    });
+
+    await transporter.sendMail({
+      from: config.smtp_sender,
+      to: email,
+      subject: "PulseRoute — Your Password Was Changed",
+      text: `Hello ${name}, your PulseRoute account password was successfully updated on ${changedTime}.`,
+      html,
+    });
+  } catch (error) {
+    console.error("Nodemailer Error sending password changed email:", error);
   }
 };
 
@@ -506,6 +579,117 @@ const resendOtp = async (payload: IResendOtpPayload) => {
     httpStatus.NOT_FOUND,
     "No pending registration session found for this email. Please register again."
   );
+};
+
+const forgotPassword = async (payload: IForgotPasswordPayload) => {
+  const email = payload.email.trim().toLowerCase();
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "No account found with this email address"
+    );
+  }
+
+  if (user.isDeleted || user.status === UserStatus.DELETED) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "This account has been permanently deleted"
+    );
+  }
+
+  if (user.status === UserStatus.BLOCKED) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "This account has been blocked. Please contact support."
+    );
+  }
+
+  const otp = crypto.randomInt(100000, 1000000).toString();
+  const resetKey = `password_reset_otp:${email}`;
+
+  // Store reset OTP in Redis with 5-minute TTL
+  await redisClient.set(resetKey, otp, { EX: OTP_EXPIRATION_SECONDS });
+
+  // Send Reset Password OTP email
+  await sendResetPasswordEmail(email, user.name, otp);
+
+  return {
+    email,
+    expiresIn: "5 minutes",
+    message: "Password reset OTP has been sent to your email.",
+  };
+};
+
+const resetPassword = async (payload: IResetPasswordPayload) => {
+  const email = payload.email.trim().toLowerCase();
+  const inputOtp = payload.otp.trim();
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User account not found");
+  }
+
+  if (user.isDeleted || user.status === UserStatus.DELETED) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "This account has been permanently deleted"
+    );
+  }
+
+  if (user.status === UserStatus.BLOCKED) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "This account has been blocked. Please contact support."
+    );
+  }
+
+  const resetKey = `password_reset_otp:${email}`;
+  const storedOtp = await redisClient.get(resetKey);
+
+  if (!storedOtp) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Password reset code has expired or is invalid. Please request a new one."
+    );
+  }
+
+  if (storedOtp !== inputOtp) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Invalid OTP code. Please enter the correct 6-digit code."
+    );
+  }
+
+  const saltRounds = Number(config.bcrypt_salt_rounds) || 10;
+  const hashedPassword = await bcrypt.hash(payload.newPassword, saltRounds);
+
+  // Update password in Database
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+      needPasswordChange: false,
+    },
+  });
+
+  // Clear Redis reset OTP
+  await redisClient.del(resetKey);
+
+  // Send security confirmation email
+  await sendPasswordChangedEmail(email, user.name);
+
+  return {
+    message:
+      "Password has been reset successfully! You can now log in with your new password.",
+  };
 };
 
 const googleLogin = async (payload: IGoogleLoginPayload) => {
@@ -960,6 +1144,8 @@ export const AuthService = {
   registerDriver,
   verifyOtp,
   resendOtp,
+  forgotPassword,
+  resetPassword,
   googleLogin,
   loginUser,
   getMe,

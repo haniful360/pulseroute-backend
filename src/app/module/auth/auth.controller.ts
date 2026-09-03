@@ -78,6 +78,30 @@ const resendOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await AuthService.forgotPassword(payload);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await AuthService.resetPassword(payload);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.googleLogin(payload);
@@ -212,6 +236,8 @@ export const AuthController = {
   registerDriver,
   verifyOtp,
   resendOtp,
+  forgotPassword,
+  resetPassword,
   googleLogin,
   loginUser,
   getMe,
