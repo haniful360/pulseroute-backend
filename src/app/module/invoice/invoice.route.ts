@@ -21,10 +21,21 @@ router.get(
   InvoiceController.getMyInvoices,
 );
 
-// Admin oversight
+// Admin oversight & Financial Audit Export
+router.get(
+  "/export/csv",
+  auth(Role.SUPER_ADMIN),
+  InvoiceController.exportInvoicesAudit,
+);
 router.get("/", auth(Role.SUPER_ADMIN), InvoiceController.getAllInvoices);
 
 // Specific invoice operations
+router.get(
+  "/:id/receipt/export",
+  auth(Role.USER, Role.DRIVER, Role.SUPER_ADMIN),
+  InvoiceController.exportInvoiceReceipt,
+);
+
 router.get(
   "/:id",
   auth(Role.USER, Role.DRIVER, Role.SUPER_ADMIN),

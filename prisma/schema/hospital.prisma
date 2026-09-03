@@ -1,0 +1,52 @@
+model Hospital {
+  id              String   @id @default(uuid(7))
+  name            String
+  branch          String?
+  address         String
+  emergencyPhone  String
+  emergencyEmail  String?
+  latitude        Float
+  longitude       Float
+  hasICU          Boolean  @default(true)
+  hasNICU         Boolean  @default(false)
+  hasTraumaCenter Boolean  @default(true)
+  hasBloodBank    Boolean  @default(true)
+  totalBeds       Int      @default(50)
+  availableBeds   Int      @default(10)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  preAlerts HospitalPreAlert[]
+
+  @@index([latitude, longitude], name: "idx_hospital_location")
+  @@map("hospitals")
+}
+
+model HospitalPreAlert {
+  id                   String      @id @default(uuid(7))
+  trackingToken        String      @unique @default(uuid())
+  tripId               String
+  trip                 Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hospitalId           String
+  hospital             Hospital    @relation(fields: [hospitalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  patientName          String
+  patientAge           Int?
+  patientGender        String?
+  bloodGroup           String?
+  medicalCondition     String?
+  allergies            String?
+  vitalsSummary        String?
+  estimatedArrivalMins Int?
+  assignedBayNumber    String?
+  status               AlertStatus @default(ALERTED)
+  acknowledgedAt       DateTime?
+  acknowledgedBy       String?
+  notes                String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  @@index([hospitalId, status], name: "idx_prealert_hospital_status")
+  @@index([trackingToken], name: "idx_prealert_tracking_token")
+  @@map("hospital_pre_alerts")
+}

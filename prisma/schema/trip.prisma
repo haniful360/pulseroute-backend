@@ -42,6 +42,7 @@ model Trip {
   review             Review?
   walletTransactions WalletTransaction[]
   chatMessages       ChatMessage[]
+  preAlerts          HospitalPreAlert[]
 
   @@index([patientId], name: "idx_trip_patientId")
   @@index([driverId], name: "idx_trip_driverId")

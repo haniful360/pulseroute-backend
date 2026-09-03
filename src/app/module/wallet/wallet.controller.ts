@@ -72,10 +72,25 @@ const processPayoutRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const exportDriverStatement = catchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as IRequestUser;
+    const result = await WalletService.exportDriverStatement(user, req.query);
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${result.filename}"`,
+    );
+    res.status(httpStatus.OK).send(result.csvContent);
+  },
+);
+
 export const WalletController = {
   getMyWallet,
   getMyTransactions,
   createPayoutRequest,
   getAllPayoutRequests,
   processPayoutRequest,
+  exportDriverStatement,
 };

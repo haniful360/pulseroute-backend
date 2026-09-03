@@ -247,4 +247,79 @@ export const invoicePaths = {
       },
     },
   },
+  "/api/v1/invoices/export/csv": {
+    get: {
+      tags: ["Invoices & Billing"],
+      summary: "Export Platform Invoices Financial Audit (Admin Only - CSV)",
+      description:
+        "Generates a complete, downloadable RFC 4180 CSV export of platform billing records, fares, distance, and driver earnings.",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "startDate",
+          in: "query",
+          required: false,
+          schema: { type: "string", format: "date-time" },
+        },
+        {
+          name: "endDate",
+          in: "query",
+          required: false,
+          schema: { type: "string", format: "date-time" },
+        },
+        {
+          name: "paymentStatus",
+          in: "query",
+          required: false,
+          schema: { type: "string", enum: ["PAID", "UNPAID", "REFUNDED"] },
+        },
+        {
+          name: "paymentMethod",
+          in: "query",
+          required: false,
+          schema: { type: "string", enum: ["CASH", "STRIPE"] },
+        },
+      ],
+      responses: {
+        200: {
+          description: "Downloadable CSV audit file",
+          content: {
+            "text/csv": {
+              schema: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+  },
+  "/api/v1/invoices/{id}/receipt/export": {
+    get: {
+      tags: ["Invoices & Billing"],
+      summary: "Download Official Medical Trip Receipt (CSV Export)",
+      description:
+        "Generates an official itemized medical receipt for patient insurance claims and expense reimbursements.",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string" },
+          description: "Invoice ID",
+        },
+      ],
+      responses: {
+        200: {
+          description: "Downloadable CSV medical receipt file",
+          content: {
+            "text/csv": {
+              schema: { type: "string" },
+            },
+          },
+        },
+        403: { description: "Forbidden - Not a trip participant" },
+        404: { description: "Invoice not found" },
+      },
+    },
+  },
 };

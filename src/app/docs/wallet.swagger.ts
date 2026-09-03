@@ -340,4 +340,54 @@ export const walletPaths = {
       },
     },
   },
+  "/api/v1/wallets/statement/export": {
+    get: {
+      tags: ["Wallet & Driver Ledger"],
+      summary: "Download Driver Earning & Ledger Statement (CSV Export)",
+      description:
+        "Generates a downloadable RFC 4180 CSV statement file containing all earning credits, commission deductions, and withdrawal payouts for the authenticated driver.",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "startDate",
+          in: "query",
+          required: false,
+          schema: { type: "string", format: "date-time" },
+          description: "Filter from start date",
+        },
+        {
+          name: "endDate",
+          in: "query",
+          required: false,
+          schema: { type: "string", format: "date-time" },
+          description: "Filter up to end date",
+        },
+        {
+          name: "type",
+          in: "query",
+          required: false,
+          schema: {
+            type: "string",
+            enum: [
+              "TRIP_PAYMENT_CREDIT",
+              "PLATFORM_COMMISSION_DEBIT",
+              "PAYOUT_WITHDRAWAL_DEBIT",
+              "BONUS_CREDIT",
+              "ADJUSTMENT",
+            ],
+          },
+        },
+      ],
+      responses: {
+        200: {
+          description: "Downloadable CSV statement file",
+          content: {
+            "text/csv": {
+              schema: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+  },
 };

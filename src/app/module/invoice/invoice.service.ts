@@ -6,6 +6,7 @@ import {
 } from "../../../generated/prisma/enums";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
+import { buildCsv } from "../../utils/csvHelper";
 import { IRequestUser } from "../auth/auth.interface";
 import { WalletService } from "../wallet/wallet.service";
 import { IInvoiceFilterRequest, IPayInvoicePayload } from "./invoice.interface";
@@ -327,10 +328,166 @@ const getAllInvoices = async (filters: IInvoiceFilterRequest) => {
   };
 };
 
+const exportInvoicesAudit = async (query: {
+  startDate?: string;
+  endDate?: string;
+  paymentStatus?: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+}) => {
+  const whereCondition: any = {};
+
+  if (query.paymentStatus) whereCondition.paymentStatus = query.paymentStatus;
+  if (query.paymentMethod) whereCondition.paymentMethod = query.paymentMethod;
+
+  if (query.startDate || query.endDate) {
+    whereCondition.issuedAt = {};
+    if (query.startDate)
+      whereCondition.issuedAt.gte = new Date(query.startDate);
+    if (query.endDate) whereCondition.issuedAt.lte = new Date(query.endDate);
+  }
+
+  const invoices = await prisma.invoice.findMany({
+    where: whereCondition,
+    orderBy: { issuedAt: "desc" },
+    include: {
+      trip: {
+        include: {
+          patient: { select: { name: true, contactNumber: true } },
+          driver: { select: { name: true, contactNumber: true } },
+          vehicle: { select: { vehicleNumber: true, ambulanceType: true } },
+        },
+      },
+    },
+  });
+
+  const headers = [
+    "Invoice Number",
+    "Trip ID",
+    "Issued At",
+    "Patient Name",
+    "Patient Phone",
+    "Driver Name",
+    "Driver Phone",
+    "Vehicle Reg",
+    "Ambulance Type",
+    "Distance (KM)",
+    "Base Fare (BDT)",
+    "Distance Fare (BDT)",
+    "Total Amount (BDT)",
+    "Platform Commission (BDT)",
+    "Driver Earning (BDT)",
+    "Payment Method",
+    "Payment Status",
+    "Paid At",
+  ];
+
+  const rows = invoices.map((inv) => [
+    inv.invoiceNumber,
+    inv.tripId,
+    inv.issuedAt.toISOString(),
+    inv.trip?.patient?.name || "N/A",
+    inv.trip?.patient?.contactNumber || "N/A",
+    inv.trip?.driver?.name || "N/A",
+    inv.trip?.driver?.contactNumber || "N/A",
+    inv.trip?.vehicle?.vehicleNumber || "N/A",
+    inv.trip?.vehicle?.ambulanceType || inv.trip?.ambulanceType || "N/A",
+    inv.trip?.distanceKm ? Number(inv.trip.distanceKm).toFixed(1) : "0",
+    Number(inv.baseFare).toFixed(2),
+    Number(inv.distanceFare).toFixed(2),
+    Number(inv.totalAmount).toFixed(2),
+    Number(inv.platformCommission).toFixed(2),
+    Number(inv.driverEarning).toFixed(2),
+    inv.paymentMethod,
+    inv.paymentStatus,
+    inv.paidAt ? inv.paidAt.toISOString() : "UNPAID",
+  ]);
+
+  const csvContent = buildCsv(headers, rows);
+  return {
+    csvContent,
+    filename: `invoices-audit-${new Date().toISOString().split("T")[0]}.csv`,
+  };
+};
+
+const exportInvoiceReceipt = async (
+  authUser: IRequestUser,
+  invoiceId: string,
+) => {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: invoiceId },
+    include: {
+      trip: {
+        include: {
+          patient: true,
+          driver: true,
+          vehicle: true,
+        },
+      },
+      paymentRecords: true,
+    },
+  });
+
+  if (!invoice || !invoice.trip) {
+    throw new AppError(httpStatus.NOT_FOUND, "Invoice not found");
+  }
+
+  const isPatient = invoice.trip.patient.userId === authUser.userId;
+  const isDriver = invoice.trip.driver?.userId === authUser.userId;
+  const isAdmin = authUser.role === Role.SUPER_ADMIN;
+
+  if (!isPatient && !isDriver && !isAdmin) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "You are not authorized to download this invoice receipt",
+    );
+  }
+
+  const headers = ["Field", "Details"];
+  const rows = [
+    ["Receipt / Invoice Number", invoice.invoiceNumber],
+    ["Trip ID", invoice.tripId],
+    ["Issue Date", invoice.issuedAt.toISOString()],
+    ["Payment Status", invoice.paymentStatus],
+    ["Payment Method", invoice.paymentMethod],
+    ["Paid At", invoice.paidAt ? invoice.paidAt.toISOString() : "Pending"],
+    [
+      "Transaction Reference",
+      invoice.paymentRecords?.[0]?.gatewayTransactionId || "N/A",
+    ],
+    ["--------------------", "--------------------"],
+    ["Patient Name", invoice.trip.patient.name],
+    ["Patient Contact", invoice.trip.patient.contactNumber || "N/A"],
+    [
+      "Emergency Contact",
+      `${invoice.trip.patient.emergencyContactName || "N/A"} (${invoice.trip.patient.emergencyContactNumber || "N/A"})`,
+    ],
+    ["Emergency Severity", invoice.trip.emergencySeverity],
+    ["Pickup Address", invoice.trip.pickupAddress],
+    ["Destination Hospital", invoice.trip.destinationAddress || "N/A"],
+    ["Distance Traveled", `${invoice.trip.distanceKm || 0} KM`],
+    ["--------------------", "--------------------"],
+    ["Assigned Driver", invoice.trip.driver?.name || "N/A"],
+    ["Ambulance Plate", invoice.trip.vehicle?.vehicleNumber || "N/A"],
+    ["Ambulance Type", invoice.trip.ambulanceType],
+    ["--------------------", "--------------------"],
+    ["Base Fare", `${Number(invoice.baseFare).toFixed(2)} BDT`],
+    ["Distance Fare", `${Number(invoice.distanceFare).toFixed(2)} BDT`],
+    ["Total Fare Amount", `${Number(invoice.totalAmount).toFixed(2)} BDT`],
+  ];
+
+  const csvContent = buildCsv(headers, rows);
+  return {
+    csvContent,
+    filename: `receipt-${invoice.invoiceNumber}.csv`,
+  };
+};
+
 export const InvoiceService = {
   generateInvoiceForTrip,
   payInvoice,
   getInvoiceById,
   getMyInvoices,
   getAllInvoices,
+  exportInvoicesAudit,
+  exportInvoiceReceipt,
 };
