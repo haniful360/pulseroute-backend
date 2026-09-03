@@ -1,8 +1,10 @@
 import { driverPaths, driverSchemas } from "./driver.swagger";
+import { invoicePaths, invoiceSchemas } from "./invoice.swagger";
 import { pricingPaths, pricingSchemas } from "./pricing.swagger";
 import { tripPaths, tripSchemas } from "./trip.swagger";
 import { userPaths, userSchemas } from "./user.swagger";
 import { vehiclePaths, vehicleSchemas } from "./vehicle.swagger";
+import { walletPaths, walletSchemas } from "./wallet.swagger";
 
 export const swaggerDocument = {
   openapi: "3.0.0",
@@ -38,6 +40,8 @@ export const swaggerDocument = {
       ...vehicleSchemas,
       ...pricingSchemas,
       ...tripSchemas,
+      ...invoiceSchemas,
+      ...walletSchemas,
       RegisterUserRequest: {
         type: "object",
         required: ["name", "email", "password"],
@@ -722,5 +726,7 @@ export const swaggerDocument = {
     ...vehiclePaths,
     ...pricingPaths,
     ...tripPaths,
+    ...invoicePaths,
+    ...walletPaths,
   },
 };

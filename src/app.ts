@@ -9,10 +9,12 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { DriverRoutes } from "./app/module/driver/driver.route";
+import { InvoiceRoutes } from "./app/module/invoice/invoice.route";
 import { PricingRoutes } from "./app/module/pricing/pricing.route";
 import { TripRoutes } from "./app/module/trip/trip.route";
 import { UserRoutes } from "./app/module/user/user.route";
 import { VehicleRoutes } from "./app/module/vehicle/vehicle.route";
+import { WalletRoutes } from "./app/module/wallet/wallet.route";
 
 const app: Application = express();
 
@@ -40,6 +42,8 @@ app.use("/api/v1/drivers", DriverRoutes);
 app.use("/api/v1/vehicles", VehicleRoutes);
 app.use("/api/v1/pricing", PricingRoutes);
 app.use("/api/v1/trips", TripRoutes);
+app.use("/api/v1/invoices", InvoiceRoutes);
+app.use("/api/v1/wallets", WalletRoutes);
 
 // Health check route
 app.get("/", async (_req: Request, res: Response) => {
