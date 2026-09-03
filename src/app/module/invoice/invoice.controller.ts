@@ -71,10 +71,36 @@ const getAllInvoices = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const exportInvoicesAudit = catchAsync(async (req: Request, res: Response) => {
+  const result = await InvoiceService.exportInvoicesAudit(req.query);
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${result.filename}"`,
+  );
+  res.status(httpStatus.OK).send(result.csvContent);
+});
+
+const exportInvoiceReceipt = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const { id } = req.params;
+  const result = await InvoiceService.exportInvoiceReceipt(user, id as string);
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${result.filename}"`,
+  );
+  res.status(httpStatus.OK).send(result.csvContent);
+});
+
 export const InvoiceController = {
   generateInvoiceForTrip,
   payInvoice,
   getInvoiceById,
   getMyInvoices,
   getAllInvoices,
+  exportInvoicesAudit,
+  exportInvoiceReceipt,
 };

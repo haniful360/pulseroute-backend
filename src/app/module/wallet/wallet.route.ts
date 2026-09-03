@@ -16,6 +16,12 @@ router.get(
   WalletController.getMyTransactions,
 );
 
+router.get(
+  "/statement/export",
+  auth(Role.DRIVER),
+  WalletController.exportDriverStatement,
+);
+
 router.post(
   "/payout-request",
   auth(Role.DRIVER),

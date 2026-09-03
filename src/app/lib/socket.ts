@@ -61,6 +61,19 @@ export const initSocket = (server: http.Server): Server => {
       }
     });
 
+    // 4.1 Join Hospital ER Room (for triage monitors & trauma sirens)
+    socket.on("hospital:join", (hospitalId: string) => {
+      if (hospitalId) {
+        socket.join(`hospital:${hospitalId}`);
+      }
+    });
+
+    socket.on("hospital:leave", (hospitalId: string) => {
+      if (hospitalId) {
+        socket.leave(`hospital:${hospitalId}`);
+      }
+    });
+
     // 5. Driver live GPS location broadcasting
     socket.on(
       "driver:location-update",

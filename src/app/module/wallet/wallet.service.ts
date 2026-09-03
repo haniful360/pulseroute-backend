@@ -7,6 +7,7 @@ import {
 } from "../../../generated/prisma/enums";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
+import { buildCsv } from "../../utils/csvHelper";
 import { IRequestUser } from "../auth/auth.interface";
 import {
   ICreatePayoutRequestPayload,
@@ -374,6 +375,74 @@ const processPayoutRequest = async (
   return result;
 };
 
+const exportDriverStatement = async (
+  authUser: IRequestUser,
+  query: { startDate?: string; endDate?: string; type?: TransactionType },
+) => {
+  const driver = await prisma.driver.findUnique({
+    where: { userId: authUser.userId },
+  });
+
+  if (!driver || driver.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
+  }
+
+  const wallet = await getOrCreateDriverWallet(driver.id);
+
+  const whereConditions: any = {
+    walletId: wallet.id,
+  };
+
+  if (query.type) {
+    whereConditions.type = query.type;
+  }
+
+  if (query.startDate || query.endDate) {
+    whereConditions.createdAt = {};
+    if (query.startDate) {
+      whereConditions.createdAt.gte = new Date(query.startDate);
+    }
+    if (query.endDate) {
+      whereConditions.createdAt.lte = new Date(query.endDate);
+    }
+  }
+
+  const transactions = await prisma.walletTransaction.findMany({
+    where: whereConditions,
+    orderBy: { createdAt: "desc" },
+  });
+
+  const headers = [
+    "Transaction ID",
+    "Date & Time",
+    "Type",
+    "Direction",
+    "Amount (BDT)",
+    "Balance After (BDT)",
+    "Status",
+    "Description",
+    "Trip ID",
+  ];
+
+  const rows = transactions.map((tx) => [
+    tx.id,
+    tx.createdAt.toISOString(),
+    tx.type,
+    tx.direction,
+    Number(tx.amount).toFixed(2),
+    Number(tx.balanceAfter).toFixed(2),
+    tx.status,
+    tx.description || "",
+    tx.tripId || "N/A",
+  ]);
+
+  const csvContent = buildCsv(headers, rows);
+  return {
+    csvContent,
+    filename: `wallet-statement-${driver.name.replace(/\s+/g, "_")}-${new Date().toISOString().split("T")[0]}.csv`,
+  };
+};
+
 export const WalletService = {
   getMyWallet,
   getMyTransactions,
@@ -381,4 +450,5 @@ export const WalletService = {
   createPayoutRequest,
   getAllPayoutRequests,
   processPayoutRequest,
+  exportDriverStatement,
 };

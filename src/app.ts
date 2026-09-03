@@ -11,6 +11,7 @@ import { AnalyticsRoutes } from "./app/module/analytics/analytics.route";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { ChatRoutes } from "./app/module/chat/chat.route";
 import { DriverRoutes } from "./app/module/driver/driver.route";
+import { HospitalRoutes } from "./app/module/hospital/hospital.route";
 import { InvoiceRoutes } from "./app/module/invoice/invoice.route";
 import { NotificationRoutes } from "./app/module/notification/notification.route";
 import { PaymentRoutes } from "./app/module/payment/payment.route";
@@ -69,6 +70,7 @@ app.use("/api/v1/settings", SettingRoutes);
 app.use("/api/v1/payments", PaymentRoutes);
 app.use("/api/v1/notifications", NotificationRoutes);
 app.use("/api/v1/chats", ChatRoutes);
+app.use("/api/v1/hospitals", HospitalRoutes);
 
 // Health check route
 app.get("/", async (_req: Request, res: Response) => {

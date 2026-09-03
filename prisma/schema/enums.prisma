@@ -123,3 +123,11 @@ enum NotificationType {
   ACCOUNT
   SYSTEM
 }
+
+enum AlertStatus {
+  ALERTED
+  ACKNOWLEDGED
+  PREPARING_BAY
+  PATIENT_ARRIVED
+  CANCELLED
+}
