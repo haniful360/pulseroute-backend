@@ -1,0 +1,15 @@
+model ChatMessage {
+  id        String   @id @default(uuid(7))
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  senderId  String
+  sender    User     @relation("UserSentMessages", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId, createdAt], name: "idx_chat_trip_createdAt")
+  @@index([senderId], name: "idx_chat_senderId")
+  @@map("chat_messages")
+}

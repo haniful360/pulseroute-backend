@@ -1,4 +1,5 @@
 import { analyticsPaths, analyticsSchemas } from "./analytics.swagger";
+import { chatSwaggerPaths } from "./chat.swagger";
 import { driverPaths, driverSchemas } from "./driver.swagger";
 import { invoicePaths, invoiceSchemas } from "./invoice.swagger";
 import { notificationPaths, notificationSchemas } from "./notification.swagger";
@@ -743,5 +744,6 @@ export const swaggerDocument = {
     ...settingPaths,
     ...paymentPaths,
     ...notificationPaths,
+    ...chatSwaggerPaths,
   },
 };

@@ -78,6 +78,32 @@ export const initSocket = (server: http.Server): Server => {
       },
     );
 
+    // 6. Real-Time Chat message submission via socket
+    socket.on(
+      "chat:send-message",
+      async (data: { tripId: string; message: string }) => {
+        if (user && data.tripId && data.message) {
+          try {
+            const { ChatService } = await import("../module/chat/chat.service");
+            await ChatService.sendMessage(user, data.tripId, data.message);
+          } catch (err: any) {
+            socket.emit("chat:error", { message: err.message });
+          }
+        }
+      },
+    );
+
+    // 7. Live typing indicator
+    socket.on("chat:typing", (data: { tripId: string; isTyping: boolean }) => {
+      if (data.tripId && user) {
+        socket.to(`trip:${data.tripId}`).emit("chat:user-typing", {
+          userId: user.userId,
+          userName: user.name || "Participant",
+          isTyping: data.isTyping,
+        });
+      }
+    });
+
     socket.on("disconnect", () => {
       // Clean disconnect
     });
