@@ -79,7 +79,10 @@ export const driverSchemas = {
     properties: {
       success: { type: "boolean", example: true },
       statusCode: { type: "integer", example: 200 },
-      message: { type: "string", example: "Driver profile retrieved successfully" },
+      message: {
+        type: "string",
+        example: "Driver profile retrieved successfully",
+      },
       data: {
         type: "object",
         properties: {
@@ -134,6 +137,46 @@ export const driverSchemas = {
 };
 
 export const driverPaths = {
+  "/api/v1/drivers/dashboard": {
+    get: {
+      tags: ["Driver Operations"],
+      summary: "Get Driver Dedicated Dashboard Overview",
+      description:
+        "Unified dashboard metrics for authenticated drivers: duty status, active ambulance, wallet balance, today/weekly earnings, active ongoing trip, pending offers count, recent trips, and patient reviews.",
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: "Driver dashboard retrieved successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  statusCode: { type: "integer", example: 200 },
+                  data: {
+                    type: "object",
+                    properties: {
+                      profile: { type: "object" },
+                      duty: { type: "object" },
+                      financials: { type: "object" },
+                      performance: { type: "object" },
+                      live: { type: "object" },
+                      recentTrips: { type: "array", items: { type: "object" } },
+                      recentReviews: {
+                        type: "array",
+                        items: { type: "object" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   "/api/v1/drivers/my-profile": {
     get: {
       tags: ["Driver Operations"],
@@ -422,4 +465,3 @@ export const driverPaths = {
     },
   },
 };
-

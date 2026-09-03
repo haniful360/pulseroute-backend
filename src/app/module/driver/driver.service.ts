@@ -2,6 +2,9 @@ import httpStatus from "http-status";
 import {
   DriverVerificationStatus,
   DutyStatus,
+  OfferStatus,
+  TransactionType,
+  TripStatus,
   VehicleVerificationStatus,
 } from "../../../generated/prisma/enums";
 import AppError from "../../errors/AppError";
@@ -325,8 +328,174 @@ const verifyDriver = async (
   return updatedDriver;
 };
 
+const getDriverDashboardOverview = async (authUser: IRequestUser) => {
+  const driver = await prisma.driver.findUnique({
+    where: { userId: authUser.userId },
+    include: {
+      currentVehicle: true,
+      wallet: true,
+    },
+  });
+
+  if (!driver || driver.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
+  }
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const walletId = driver.wallet?.id;
+
+  const [
+    activeTrip,
+    pendingOffersCount,
+    todayEarningsAgg,
+    weekEarningsAgg,
+    completedTripsCount,
+    cancelledTripsCount,
+    recentTrips,
+    recentReviews,
+  ] = await Promise.all([
+    // Currently active trip
+    prisma.trip.findFirst({
+      where: {
+        driverId: driver.id,
+        status: {
+          in: [
+            TripStatus.ACCEPTED,
+            TripStatus.EN_ROUTE,
+            TripStatus.ARRIVED,
+            TripStatus.IN_TRANSIT,
+          ],
+        },
+      },
+      include: {
+        patient: {
+          select: {
+            name: true,
+            contactNumber: true,
+            bloodGroup: true,
+            emergencyContactName: true,
+            emergencyContactNumber: true,
+          },
+        },
+        vehicle: true,
+      },
+    }),
+
+    // Pending incoming dispatch offers
+    prisma.dispatchOffer.count({
+      where: {
+        driverId: driver.id,
+        status: OfferStatus.PENDING,
+        expiresAt: { gt: new Date() },
+      },
+    }),
+
+    // Today's earnings
+    walletId
+      ? prisma.walletTransaction.aggregate({
+          where: {
+            walletId,
+            type: TransactionType.TRIP_EARNING,
+            createdAt: { gte: startOfToday },
+          },
+          _sum: { amount: true },
+        })
+      : { _sum: { amount: null } },
+
+    // This week's earnings
+    walletId
+      ? prisma.walletTransaction.aggregate({
+          where: {
+            walletId,
+            type: TransactionType.TRIP_EARNING,
+            createdAt: { gte: startOfWeek },
+          },
+          _sum: { amount: true },
+        })
+      : { _sum: { amount: null } },
+
+    // Trip counts
+    prisma.trip.count({
+      where: { driverId: driver.id, status: TripStatus.COMPLETED },
+    }),
+    prisma.trip.count({
+      where: { driverId: driver.id, status: TripStatus.CANCELLED },
+    }),
+
+    // Recent 5 trips
+    prisma.trip.findMany({
+      where: { driverId: driver.id },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        patient: { select: { name: true, contactNumber: true } },
+        vehicle: { select: { ambulanceType: true, registrationNumber: true } },
+        invoice: { select: { totalAmount: true, paymentStatus: true } },
+      },
+    }),
+
+    // Recent 5 reviews
+    prisma.review.findMany({
+      where: { driverId: driver.id },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        patient: { select: { name: true } },
+      },
+    }),
+  ]);
+
+  const isVehicleApproved =
+    driver.currentVehicle?.verificationStatus ===
+    VehicleVerificationStatus.APPROVED;
+  const isDriverApproved =
+    driver.verificationStatus === DriverVerificationStatus.APPROVED;
+  const isEligibleForDuty = isDriverApproved && isVehicleApproved;
+
+  return {
+    profile: {
+      id: driver.id,
+      name: driver.name,
+      contactNumber: driver.contactNumber,
+      verificationStatus: driver.verificationStatus,
+    },
+    duty: {
+      dutyStatus: driver.dutyStatus,
+      isEligibleForDuty,
+      currentVehicle: driver.currentVehicle,
+    },
+    financials: {
+      walletBalance: Number(driver.wallet?.balance || 0),
+      todayEarnings: Number(todayEarningsAgg._sum.amount || 0),
+      weeklyEarnings: Number(weekEarningsAgg._sum.amount || 0),
+      totalEarnings: Number(driver.wallet?.totalEarnings || 0),
+      totalCommissionPaid: Number(driver.wallet?.totalCommissionPaid || 0),
+      totalWithdrawn: Number(driver.wallet?.totalWithdrawn || 0),
+    },
+    performance: {
+      rating: driver.rating,
+      completedTrips: completedTripsCount,
+      cancelledTrips: cancelledTripsCount,
+      totalTripsAssigned: driver.totalTrips,
+    },
+    live: {
+      activeTrip,
+      pendingOffersCount,
+    },
+    recentTrips,
+    recentReviews,
+  };
+};
+
 export const DriverService = {
   getMyDriverProfile,
+  getDriverDashboardOverview,
   updateDutyStatus,
   updateLocation,
   setActiveVehicle,

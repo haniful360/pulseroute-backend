@@ -17,6 +17,20 @@ const getMyDriverProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getDriverDashboardOverview = catchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as IRequestUser;
+    const result = await DriverService.getDriverDashboardOverview(user);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Driver dashboard overview retrieved successfully",
+      data: result,
+    });
+  },
+);
+
 const updateDutyStatus = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
   const result = await DriverService.updateDutyStatus(user, req.body);
@@ -96,6 +110,7 @@ const verifyDriver = catchAsync(async (req: Request, res: Response) => {
 
 export const DriverController = {
   getMyDriverProfile,
+  getDriverDashboardOverview,
   updateDutyStatus,
   updateLocation,
   setActiveVehicle,

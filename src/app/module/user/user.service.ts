@@ -1,5 +1,10 @@
 import httpStatus from "http-status";
-import { Role, UserStatus } from "../../../generated/prisma/enums";
+import {
+  PaymentStatus,
+  Role,
+  TripStatus,
+  UserStatus,
+} from "../../../generated/prisma/enums";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import { IRequestUser } from "../auth/auth.interface";
@@ -323,8 +328,169 @@ const deleteUser = async (id: string) => {
   return { message: "User deleted successfully" };
 };
 
+const getUserDashboardOverview = async (authUser: IRequestUser) => {
+  const user = await prisma.user.findUnique({
+    where: { id: authUser.userId },
+    include: {
+      patient: true,
+    },
+  });
+
+  if (!user || user.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found or deleted");
+  }
+
+  // Ensure patient profile exists
+  let patient = user.patient;
+  if (!patient) {
+    patient = await prisma.patient.create({
+      data: {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        contactNumber: user.phone,
+      },
+    });
+  }
+
+  const [
+    activeTrip,
+    totalTripsCount,
+    completedTripsCount,
+    spentAgg,
+    unpaidInvoices,
+    recentTrips,
+  ] = await Promise.all([
+    // Active emergency trip
+    prisma.trip.findFirst({
+      where: {
+        patientId: patient.id,
+        status: {
+          in: [
+            TripStatus.REQUESTED,
+            TripStatus.ACCEPTED,
+            TripStatus.EN_ROUTE,
+            TripStatus.ARRIVED,
+            TripStatus.IN_TRANSIT,
+          ],
+        },
+      },
+      include: {
+        driver: {
+          select: {
+            id: true,
+            name: true,
+            contactNumber: true,
+            rating: true,
+            currentLatitude: true,
+            currentLongitude: true,
+          },
+        },
+        vehicle: {
+          select: {
+            ambulanceType: true,
+            registrationNumber: true,
+            model: true,
+            hasOxygen: true,
+            hasVentilator: true,
+            hasLifeSupport: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+
+    // Total trips booked
+    prisma.trip.count({
+      where: { patientId: patient.id },
+    }),
+
+    // Completed trips
+    prisma.trip.count({
+      where: { patientId: patient.id, status: TripStatus.COMPLETED },
+    }),
+
+    // Total spent
+    prisma.invoice.aggregate({
+      where: { patientId: patient.id, paymentStatus: PaymentStatus.PAID },
+      _sum: { paidAmount: true },
+    }),
+
+    // Unpaid invoices
+    prisma.invoice.findMany({
+      where: { patientId: patient.id, paymentStatus: PaymentStatus.UNPAID },
+      include: {
+        trip: {
+          select: {
+            tripCode: true,
+            pickupAddress: true,
+            destinationAddress: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+
+    // Recent 5 trips
+    prisma.trip.findMany({
+      where: { patientId: patient.id },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        driver: { select: { name: true, contactNumber: true, rating: true } },
+        vehicle: { select: { ambulanceType: true, registrationNumber: true } },
+        invoice: {
+          select: { id: true, totalAmount: true, paymentStatus: true },
+        },
+      },
+    }),
+  ]);
+
+  // Health profile completeness calculation
+  let completenessScore = 0;
+  if (patient.bloodGroup) completenessScore += 20;
+  if (patient.contactNumber) completenessScore += 20;
+  if (patient.address) completenessScore += 20;
+  if (patient.emergencyContactName && patient.emergencyContactNumber)
+    completenessScore += 20;
+  if (patient.medicalHistory) completenessScore += 20;
+
+  return {
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      avatarUrl: user.avatarUrl,
+    },
+    emergencyProfile: {
+      bloodGroup: patient.bloodGroup,
+      contactNumber: patient.contactNumber,
+      address: patient.address,
+      gender: patient.gender,
+      emergencyContactName: patient.emergencyContactName,
+      emergencyContactNumber: patient.emergencyContactNumber,
+      medicalHistory: patient.medicalHistory,
+      profileCompleteness: `${completenessScore}%`,
+    },
+    live: {
+      activeTrip,
+      nationalHotline: "999",
+    },
+    stats: {
+      totalTripsBooked: totalTripsCount,
+      completedTrips: completedTripsCount,
+      totalSpent: Number(spentAgg._sum.paidAmount || 0),
+      unpaidInvoicesCount: unpaidInvoices.length,
+    },
+    unpaidInvoices,
+    recentTrips,
+  };
+};
+
 export const UserService = {
   getMyProfile,
+  getUserDashboardOverview,
   updateMyProfile,
   getAllUsers,
   getUserById,

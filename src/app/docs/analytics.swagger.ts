@@ -57,6 +57,61 @@ export const analyticsSchemas = {
               totalReviews: { type: "integer", example: 198 },
             },
           },
+          today: {
+            type: "object",
+            properties: {
+              tripsRequestedToday: { type: "integer", example: 14 },
+              tripsCompletedToday: { type: "integer", example: 11 },
+              revenueToday: { type: "number", example: 28500.0 },
+              commissionToday: { type: "number", example: 3420.0 },
+            },
+          },
+          breakdown: {
+            type: "object",
+            properties: {
+              ambulanceTypes: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string", example: "ICU" },
+                    count: { type: "integer", example: 45 },
+                  },
+                },
+              },
+              emergencySeverities: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    severity: { type: "string", example: "CRITICAL" },
+                    count: { type: "integer", example: 82 },
+                  },
+                },
+              },
+            },
+          },
+          top5: {
+            type: "object",
+            properties: {
+              topRatedDrivers: { type: "array", items: { type: "object" } },
+              mostActiveDrivers: { type: "array", items: { type: "object" } },
+              highestEarningDrivers: {
+                type: "array",
+                items: { type: "object" },
+              },
+              recentTrips: { type: "array", items: { type: "object" } },
+              recentPayoutRequests: {
+                type: "array",
+                items: { type: "object" },
+              },
+              recentDriverApplications: {
+                type: "array",
+                items: { type: "object" },
+              },
+              recentReviews: { type: "array", items: { type: "object" } },
+            },
+          },
         },
       },
     },

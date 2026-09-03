@@ -108,7 +108,10 @@ export const userSchemas = {
       data: {
         type: "object",
         properties: {
-          id: { type: "string", example: "550e8400-e29b-41d4-a716-446655440000" },
+          id: {
+            type: "string",
+            example: "550e8400-e29b-41d4-a716-446655440000",
+          },
           name: { type: "string", example: "Rahim Ahmed" },
           email: { type: "string", example: "rahim@example.com" },
           phone: { type: "string", example: "+8801711223344" },
@@ -162,6 +165,45 @@ export const userSchemas = {
 };
 
 export const userPaths = {
+  "/api/v1/users/dashboard": {
+    get: {
+      tags: ["Users & Profile"],
+      summary: "Get Patient / User Dedicated Dashboard Overview",
+      description:
+        "Unified dashboard metrics for patients/customers: currently active emergency trip with live driver location/ETA, emergency medical profile & completeness score, booking stats, unpaid invoices with pay-now metadata, and recent receipts.",
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: "Patient dashboard overview retrieved successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  statusCode: { type: "integer", example: 200 },
+                  data: {
+                    type: "object",
+                    properties: {
+                      user: { type: "object" },
+                      emergencyProfile: { type: "object" },
+                      live: { type: "object" },
+                      stats: { type: "object" },
+                      unpaidInvoices: {
+                        type: "array",
+                        items: { type: "object" },
+                      },
+                      recentTrips: { type: "array", items: { type: "object" } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   "/api/v1/users/profile": {
     get: {
       tags: ["Users & Profile"],

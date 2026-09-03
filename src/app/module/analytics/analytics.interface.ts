@@ -18,6 +18,12 @@ export interface IOverviewAnalytics {
     completedTrips: number;
     cancelledTrips: number;
   };
+  today: {
+    tripsRequestedToday: number;
+    tripsCompletedToday: number;
+    revenueToday: number;
+    commissionToday: number;
+  };
   financials: {
     totalBilledAmount: number;
     totalPaidAmount: number;
@@ -29,6 +35,19 @@ export interface IOverviewAnalytics {
   reputation: {
     averagePlatformRating: number;
     totalReviews: number;
+  };
+  breakdown: {
+    ambulanceTypes: Array<{ type: string; count: number }>;
+    emergencySeverities: Array<{ severity: string; count: number }>;
+  };
+  top5: {
+    topRatedDrivers: any[];
+    mostActiveDrivers: any[];
+    highestEarningDrivers: any[];
+    recentTrips: any[];
+    recentPayoutRequests: any[];
+    recentDriverApplications: any[];
+    recentReviews: any[];
   };
 }
 

@@ -17,6 +17,20 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getUserDashboardOverview = catchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as IRequestUser;
+    const result = await UserService.getUserDashboardOverview(user);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Patient dashboard overview retrieved successfully",
+      data: result,
+    });
+  },
+);
+
 const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
   const result = await UserService.updateMyProfile(user, req.body);
@@ -79,6 +93,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 
 export const UserController = {
   getMyProfile,
+  getUserDashboardOverview,
   updateMyProfile,
   getAllUsers,
   getUserById,

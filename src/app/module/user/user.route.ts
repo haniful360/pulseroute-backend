@@ -5,6 +5,13 @@ import { UserController } from "./user.controller";
 
 const router = Router();
 
+// User dashboard overview
+router.get(
+  "/dashboard",
+  auth(Role.USER, Role.SUPER_ADMIN),
+  UserController.getUserDashboardOverview,
+);
+
 // Current user profile endpoints (accessible by any authenticated role)
 router.get(
   "/profile",

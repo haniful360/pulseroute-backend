@@ -9,6 +9,12 @@ const router = Router();
 
 // Driver self-service endpoints
 router.get(
+  "/dashboard",
+  auth(Role.DRIVER),
+  DriverController.getDriverDashboardOverview,
+);
+
+router.get(
   "/my-profile",
   auth(Role.DRIVER),
   DriverController.getMyDriverProfile,

@@ -10,6 +10,9 @@ import { prisma } from "../../lib/prisma";
 import { IOverviewAnalytics, IRecentActivities } from "./analytics.interface";
 
 const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
   const [
     totalPatients,
     totalDrivers,
@@ -24,12 +27,25 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
     activeTrips,
     completedTrips,
     cancelledTrips,
+    tripsRequestedToday,
+    tripsCompletedToday,
+    todayFinancials,
     billedAgg,
     paidAgg,
     payoutAgg,
     pendingPayoutsCount,
     reviewAgg,
+    ambulanceTypeGroups,
+    severityGroups,
+    topRatedDrivers,
+    mostActiveDrivers,
+    highestEarningDrivers,
+    recentTrips,
+    recentPayoutRequests,
+    recentDriverApplications,
+    recentReviews,
   ] = await Promise.all([
+    // User counts
     prisma.patient.count(),
     prisma.driver.count({ where: { isDeleted: false } }),
     prisma.driver.count({
@@ -44,6 +60,8 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
         isDeleted: false,
       },
     }),
+
+    // Fleet readiness
     prisma.vehicle.count({ where: { isDeleted: false } }),
     prisma.vehicle.count({
       where: {
@@ -57,6 +75,8 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
     prisma.driver.count({
       where: { dutyStatus: DutyStatus.ON_TRIP, isDeleted: false },
     }),
+
+    // Trip statuses
     prisma.trip.count(),
     prisma.trip.count({ where: { status: TripStatus.REQUESTED } }),
     prisma.trip.count({
@@ -73,6 +93,29 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
     }),
     prisma.trip.count({ where: { status: TripStatus.COMPLETED } }),
     prisma.trip.count({ where: { status: TripStatus.CANCELLED } }),
+
+    // Today's operational stats
+    prisma.trip.count({
+      where: { createdAt: { gte: startOfToday } },
+    }),
+    prisma.trip.count({
+      where: {
+        status: TripStatus.COMPLETED,
+        completedAt: { gte: startOfToday },
+      },
+    }),
+    prisma.invoice.aggregate({
+      where: {
+        paymentStatus: PaymentStatus.PAID,
+        paidAt: { gte: startOfToday },
+      },
+      _sum: {
+        paidAmount: true,
+        platformCommission: true,
+      },
+    }),
+
+    // Overall Financials
     prisma.invoice.aggregate({
       _sum: { totalAmount: true },
     }),
@@ -94,9 +137,140 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
         status: { in: [PayoutStatus.REQUESTED, PayoutStatus.PROCESSING] },
       },
     }),
+
+    // Platform rating
     prisma.review.aggregate({
       _avg: { rating: true },
       _count: { rating: true },
+    }),
+
+    // Categorical breakdowns
+    prisma.trip.groupBy({
+      by: ["ambulanceType"],
+      _count: { id: true },
+    }),
+    prisma.trip.groupBy({
+      by: ["emergencySeverity"],
+      _count: { id: true },
+    }),
+
+    // Top 5 Highest Rated Drivers
+    prisma.driver.findMany({
+      where: {
+        isDeleted: false,
+        verificationStatus: DriverVerificationStatus.APPROVED,
+      },
+      take: 5,
+      orderBy: [{ rating: "desc" }, { totalTrips: "desc" }],
+      select: {
+        id: true,
+        name: true,
+        contactNumber: true,
+        rating: true,
+        totalTrips: true,
+        dutyStatus: true,
+        currentVehicle: {
+          select: {
+            ambulanceType: true,
+            registrationNumber: true,
+            model: true,
+          },
+        },
+      },
+    }),
+
+    // Top 5 Most Active Drivers
+    prisma.driver.findMany({
+      where: {
+        isDeleted: false,
+        verificationStatus: DriverVerificationStatus.APPROVED,
+      },
+      take: 5,
+      orderBy: { totalTrips: "desc" },
+      select: {
+        id: true,
+        name: true,
+        contactNumber: true,
+        rating: true,
+        totalTrips: true,
+        dutyStatus: true,
+        currentVehicle: {
+          select: {
+            ambulanceType: true,
+            registrationNumber: true,
+          },
+        },
+      },
+    }),
+
+    // Top 5 Highest Earning Drivers
+    prisma.driverWallet.findMany({
+      take: 5,
+      orderBy: { totalEarnings: "desc" },
+      select: {
+        id: true,
+        balance: true,
+        totalEarnings: true,
+        totalWithdrawn: true,
+        driver: {
+          select: {
+            id: true,
+            name: true,
+            contactNumber: true,
+            rating: true,
+            totalTrips: true,
+          },
+        },
+      },
+    }),
+
+    // Top 5 Recent Emergency Trips
+    prisma.trip.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        patient: { select: { id: true, name: true, contactNumber: true } },
+        driver: { select: { id: true, name: true, contactNumber: true } },
+        vehicle: {
+          select: { ambulanceType: true, registrationNumber: true },
+        },
+      },
+    }),
+
+    // Top 5 Recent Payout Requests
+    prisma.payoutRequest.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        driver: { select: { name: true, contactNumber: true } },
+      },
+    }),
+
+    // Top 5 Recent Driver Applications
+    prisma.driver.findMany({
+      take: 5,
+      where: { isDeleted: false },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        contactNumber: true,
+        licenseNumber: true,
+        verificationStatus: true,
+        createdAt: true,
+      },
+    }),
+
+    // Top 5 Recent Patient Reviews
+    prisma.review.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: {
+        patient: { select: { name: true } },
+        driver: { select: { name: true } },
+        trip: { select: { tripCode: true } },
+      },
     }),
   ]);
 
@@ -120,6 +294,12 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
       completedTrips,
       cancelledTrips,
     },
+    today: {
+      tripsRequestedToday,
+      tripsCompletedToday,
+      revenueToday: Number(todayFinancials._sum.paidAmount || 0),
+      commissionToday: Number(todayFinancials._sum.platformCommission || 0),
+    },
     financials: {
       totalBilledAmount: Number(billedAgg._sum.totalAmount || 0),
       totalPaidAmount: Number(paidAgg._sum.paidAmount || 0),
@@ -133,6 +313,25 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
         ? Number(reviewAgg._avg.rating.toFixed(2))
         : 5.0,
       totalReviews: reviewAgg._count.rating || 0,
+    },
+    breakdown: {
+      ambulanceTypes: ambulanceTypeGroups.map((g) => ({
+        type: g.ambulanceType,
+        count: g._count.id,
+      })),
+      emergencySeverities: severityGroups.map((g) => ({
+        severity: g.emergencySeverity,
+        count: g._count.id,
+      })),
+    },
+    top5: {
+      topRatedDrivers,
+      mostActiveDrivers,
+      highestEarningDrivers,
+      recentTrips,
+      recentPayoutRequests,
+      recentDriverApplications,
+      recentReviews,
     },
   };
 };
