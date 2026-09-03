@@ -9,6 +9,8 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { DriverRoutes } from "./app/module/driver/driver.route";
+import { PricingRoutes } from "./app/module/pricing/pricing.route";
+import { TripRoutes } from "./app/module/trip/trip.route";
 import { UserRoutes } from "./app/module/user/user.route";
 import { VehicleRoutes } from "./app/module/vehicle/vehicle.route";
 
@@ -36,6 +38,8 @@ app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/users", UserRoutes);
 app.use("/api/v1/drivers", DriverRoutes);
 app.use("/api/v1/vehicles", VehicleRoutes);
+app.use("/api/v1/pricing", PricingRoutes);
+app.use("/api/v1/trips", TripRoutes);
 
 // Health check route
 app.get("/", async (_req: Request, res: Response) => {

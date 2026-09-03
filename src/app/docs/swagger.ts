@@ -1,4 +1,6 @@
 import { driverPaths, driverSchemas } from "./driver.swagger";
+import { pricingPaths, pricingSchemas } from "./pricing.swagger";
+import { tripPaths, tripSchemas } from "./trip.swagger";
 import { userPaths, userSchemas } from "./user.swagger";
 import { vehiclePaths, vehicleSchemas } from "./vehicle.swagger";
 
@@ -34,6 +36,8 @@ export const swaggerDocument = {
       ...userSchemas,
       ...driverSchemas,
       ...vehicleSchemas,
+      ...pricingSchemas,
+      ...tripSchemas,
       RegisterUserRequest: {
         type: "object",
         required: ["name", "email", "password"],
@@ -716,5 +720,7 @@ export const swaggerDocument = {
     ...userPaths,
     ...driverPaths,
     ...vehiclePaths,
+    ...pricingPaths,
+    ...tripPaths,
   },
 };
