@@ -17,11 +17,24 @@ import { PricingRoutes } from "./app/module/pricing/pricing.route";
 import { ReviewRoutes } from "./app/module/review/review.route";
 import { SettingRoutes } from "./app/module/setting/setting.route";
 import { TripRoutes } from "./app/module/trip/trip.route";
+import helmet from "helmet";
+import { globalLimiter } from "./app/middleware/rateLimiter";
 import { UserRoutes } from "./app/module/user/user.route";
 import { VehicleRoutes } from "./app/module/vehicle/vehicle.route";
 import { WalletRoutes } from "./app/module/wallet/wallet.route";
 
 const app: Application = express();
+
+// Security HTTP Headers (configured to allow Swagger UI)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }),
+);
+
+// Global Rate Limiting for all API endpoints
+app.use("/api/v1", globalLimiter);
 
 app.use(
   cors({

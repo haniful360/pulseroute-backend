@@ -1,15 +1,17 @@
 import { Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
+import { emergencyBookingLimiter } from "../../middleware/rateLimiter";
 import { validateRequest } from "../../middleware/validateRequest";
 import { TripController } from "./trip.controller";
 import { TripValidation } from "./trip.validation";
 
 const router = Router();
 
-// Patient ambulance request
+// Patient ambulance request (protected against bot spamming with emergencyBookingLimiter)
 router.post(
   "/",
+  emergencyBookingLimiter,
   auth(Role.USER, Role.SUPER_ADMIN),
   validateRequest(TripValidation.createTripSchema),
   TripController.createTripRequest,
