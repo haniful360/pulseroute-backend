@@ -1,8 +1,10 @@
 import { analyticsPaths, analyticsSchemas } from "./analytics.swagger";
 import { driverPaths, driverSchemas } from "./driver.swagger";
 import { invoicePaths, invoiceSchemas } from "./invoice.swagger";
+import { paymentPaths, paymentSchemas } from "./payment.swagger";
 import { pricingPaths, pricingSchemas } from "./pricing.swagger";
 import { reviewPaths, reviewSchemas } from "./review.swagger";
+import { settingPaths, settingSchemas } from "./setting.swagger";
 import { tripPaths, tripSchemas } from "./trip.swagger";
 import { userPaths, userSchemas } from "./user.swagger";
 import { vehiclePaths, vehicleSchemas } from "./vehicle.swagger";
@@ -46,6 +48,8 @@ export const swaggerDocument = {
       ...walletSchemas,
       ...reviewSchemas,
       ...analyticsSchemas,
+      ...settingSchemas,
+      ...paymentSchemas,
       RegisterUserRequest: {
         type: "object",
         required: ["name", "email", "password"],
@@ -734,5 +738,7 @@ export const swaggerDocument = {
     ...walletPaths,
     ...reviewPaths,
     ...analyticsPaths,
+    ...settingPaths,
+    ...paymentPaths,
   },
 };
