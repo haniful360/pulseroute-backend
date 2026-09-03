@@ -21,6 +21,9 @@ model User {
   driver  Driver?
   admin   Admin?
 
+  // Notifications
+  notifications Notification[]
+
   // Admin audit & verification relations
   verifiedDrivers  Driver[]        @relation("DriverVerifier")
   verifiedVehicles Vehicle[]       @relation("VehicleVerifier")

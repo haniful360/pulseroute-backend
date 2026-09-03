@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
 import Stripe from "stripe";
 import {
+  NotificationType,
   PaymentMethod,
   PaymentStatus,
   Role,
@@ -10,6 +11,7 @@ import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import { stripe } from "../../lib/stripe";
 import { IRequestUser } from "../auth/auth.interface";
+import { NotificationService } from "../notification/notification.service";
 import { WalletService } from "../wallet/wallet.service";
 
 const createPaymentIntent = async (
@@ -155,6 +157,50 @@ const confirmPayment = async (
 
     return updated;
   });
+
+  // Async notifications for Patient and Driver
+  try {
+    const [patient, driver] = await Promise.all([
+      prisma.patient.findUnique({
+        where: { id: settledInvoice.patientId },
+        select: { userId: true },
+      }),
+      prisma.driver.findUnique({
+        where: { id: settledInvoice.driverId },
+        select: { userId: true },
+      }),
+    ]);
+
+    if (patient) {
+      await NotificationService.createNotification({
+        userId: patient.userId,
+        title: "💳 Payment Successful",
+        message: `Invoice ${settledInvoice.invoiceNumber} of ${settledInvoice.totalAmount} BDT has been settled via Stripe.`,
+        type: NotificationType.PAYMENT,
+        link: `/invoices/${settledInvoice.id}`,
+        metadata: {
+          invoiceId: settledInvoice.id,
+          amount: settledInvoice.totalAmount,
+        },
+      });
+    }
+
+    if (driver) {
+      await NotificationService.createNotification({
+        userId: driver.userId,
+        title: "💰 Wallet Credited",
+        message: `Net earning of ${settledInvoice.driverEarning} BDT has been credited to your wallet for invoice ${settledInvoice.invoiceNumber}.`,
+        type: NotificationType.WALLET,
+        link: `/wallet`,
+        metadata: {
+          invoiceId: settledInvoice.id,
+          driverEarning: settledInvoice.driverEarning,
+        },
+      });
+    }
+  } catch {
+    // Notification failure should not fail the payment settlement
+  }
 
   return settledInvoice;
 };

@@ -115,3 +115,11 @@ enum PayoutStatus {
   APPROVED
   REJECTED
 }
+
+enum NotificationType {
+  TRIP
+  PAYMENT
+  WALLET
+  ACCOUNT
+  SYSTEM
+}

@@ -3,6 +3,7 @@ import {
   DriverVerificationStatus,
   DutyStatus,
   EmergencySeverity,
+  NotificationType,
   OfferStatus,
   Role,
   TripStatus,
@@ -10,7 +11,9 @@ import {
 } from "../../../generated/prisma/enums";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
+import { emitDispatchOffer, emitTripStatus } from "../../lib/socket";
 import { IRequestUser } from "../auth/auth.interface";
+import { NotificationService } from "../notification/notification.service";
 import { PricingService } from "../pricing/pricing.service";
 import {
   ICancelTripPayload,
@@ -197,6 +200,39 @@ const createTripRequest = async (
     };
   });
 
+  // Asynchronously notify candidate drivers
+  try {
+    const candidateDrivers = await prisma.dispatchOffer.findMany({
+      where: { tripId: result.trip.id },
+      include: { driver: { select: { userId: true } } },
+    });
+
+    for (const item of candidateDrivers) {
+      await NotificationService.createNotification({
+        userId: item.driver.userId,
+        title: "🚨 New Emergency Ambulance Request!",
+        message: `Emergency (${result.trip.emergencySeverity}) requested within ${item.distanceToPickupKm} km. 90s to accept!`,
+        type: NotificationType.TRIP,
+        link: `/trips/${result.trip.id}`,
+        metadata: { tripId: result.trip.id, offerId: item.id },
+      });
+
+      // Live socket siren/chime alert to driver
+      emitDispatchOffer(item.driver.userId, {
+        offerId: item.id,
+        tripId: result.trip.id,
+        emergencySeverity: result.trip.emergencySeverity,
+        pickupAddress: result.trip.pickupAddress,
+        destinationAddress: result.trip.destinationAddress,
+        distanceToPickupKm: item.distanceToPickupKm,
+        estimatedArrivalMins: item.estimatedArrivalMins,
+        expiresAt: item.expiresAt,
+      });
+    }
+  } catch {
+    // Non-blocking notification
+  }
+
   return result;
 };
 
@@ -367,6 +403,34 @@ const acceptDispatchOffer = async (authUser: IRequestUser, offerId: string) => {
     return updatedTrip;
   });
 
+  // Asynchronously notify patient that ambulance is dispatched
+  try {
+    const patient = await prisma.patient.findUnique({
+      where: { id: acceptedTrip.patientId },
+      select: { userId: true },
+    });
+    if (patient) {
+      await NotificationService.createNotification({
+        userId: patient.userId,
+        title: "🚑 Ambulance Dispatched!",
+        message: `Driver ${driver.name} has accepted your trip and is on the way!`,
+        type: NotificationType.TRIP,
+        link: `/trips/${acceptedTrip.id}`,
+        metadata: { tripId: acceptedTrip.id, driverId: driver.id },
+      });
+    }
+
+    // Emit live status update to anyone watching the trip room
+    emitTripStatus(acceptedTrip.id, TripStatus.ACCEPTED, {
+      driverId: driver.id,
+      driverName: driver.name,
+      contactNumber: driver.contactNumber,
+      vehicleId: driver.currentVehicleId,
+    });
+  } catch {
+    // Non-blocking notification
+  }
+
   return acceptedTrip;
 };
 
@@ -509,6 +573,46 @@ const updateTripStatus = async (
 
     return updatedTrip;
   });
+
+  // Real-time Socket & Notification dispatch
+  try {
+    emitTripStatus(result.id, result.status, {
+      tripId: result.id,
+      driverId: result.driverId,
+      status: result.status,
+    });
+
+    const patient = await prisma.patient.findUnique({
+      where: { id: result.patientId },
+      select: { userId: true },
+    });
+
+    if (patient) {
+      let title = `Trip Update: ${result.status}`;
+      let message = `Your emergency trip status is now ${result.status}.`;
+      if (result.status === TripStatus.ARRIVED) {
+        title = "🚑 Ambulance Arrived!";
+        message = `The ambulance has arrived at ${result.pickupAddress}.`;
+      } else if (result.status === TripStatus.IN_TRANSIT) {
+        title = "🚨 En Route to Hospital";
+        message = `Patient onboard. Travelling to ${result.destinationAddress}.`;
+      } else if (result.status === TripStatus.COMPLETED) {
+        title = "✅ Trip Completed";
+        message = `Emergency trip completed safely. Your invoice is now ready for review and payment.`;
+      }
+
+      await NotificationService.createNotification({
+        userId: patient.userId,
+        title,
+        message,
+        type: NotificationType.TRIP,
+        link: `/trips/${result.id}`,
+        metadata: { tripId: result.id, status: result.status },
+      });
+    }
+  } catch {
+    // Non-blocking notification
+  }
 
   return result;
 };
