@@ -40,18 +40,12 @@ export interface IFareEstimateBreakdown {
   ambulanceType: AmbulanceType;
   distanceKm: number;
   estimatedDurationMins: number;
+  emergencySeverity: EmergencySeverity;
   baseFare: number;
   distanceFare: number;
   durationFare: number;
-  subtotal: number;
-  nightSurgeMultiplier: number;
-  emergencySurgeMultiplier: number;
+  surgeMultiplier: number;
   totalSurgeMultiplier: number;
-  calculatedFare: number;
-  minFare: number;
   finalEstimatedFare: number;
   currency: string;
-  platformCommissionRate: number;
-  estimatedCommission: number;
-  estimatedDriverNet: number;
 }
