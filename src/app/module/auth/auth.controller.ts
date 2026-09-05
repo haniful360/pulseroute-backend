@@ -105,7 +105,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.googleLogin(payload);
-  const { accessToken, refreshToken, user, profile, welcomeMessage } = result;
+  const { accessToken, refreshToken, user, welcomeMessage } = result;
 
   res.cookie("accessToken", accessToken, {
     ...cookieOptions,
@@ -123,7 +123,6 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
     message: welcomeMessage || "Logged in successfully via Google",
     data: {
       user,
-      profile,
       accessToken,
       refreshToken,
     },
@@ -133,7 +132,7 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.loginUser(payload);
-  const { accessToken, refreshToken, user, profile, welcomeMessage } = result;
+  const { accessToken, refreshToken, user, welcomeMessage } = result;
 
   res.cookie("accessToken", accessToken, {
     ...cookieOptions,
@@ -151,7 +150,6 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     message: welcomeMessage || "Logged in successfully",
     data: {
       user,
-      profile,
       accessToken,
       refreshToken,
     },

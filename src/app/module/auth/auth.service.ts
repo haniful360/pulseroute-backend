@@ -876,7 +876,6 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 
   return {
     user: sanitizedUser,
-    profile,
     accessToken,
     refreshToken,
     welcomeMessage: `Welcome to PulseRoute, ${user.name}! Logged in successfully via Google as ${roleTitle}.`,
@@ -983,7 +982,6 @@ const loginUser = async (payload: ILoginUserPayload) => {
 
   return {
     user: sanitizedUser,
-    profile,
     accessToken,
     refreshToken,
     welcomeMessage: `Welcome back, ${user.name}! Logged in successfully as ${roleTitle}.`,
