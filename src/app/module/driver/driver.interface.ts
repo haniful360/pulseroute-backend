@@ -12,6 +12,7 @@ export interface IUpdateLocationPayload {
   longitude: number;
   heading?: number;
   speed?: number;
+  vehicleId?: string;
 }
 
 export interface ISetActiveVehiclePayload {

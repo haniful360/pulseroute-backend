@@ -23,6 +23,7 @@ const updateLocationSchema = z.object({
     .max(360, "Heading must be <= 360")
     .optional(),
   speed: z.number().min(0, "Speed cannot be negative").optional(),
+  vehicleId: z.string().uuid("Invalid Vehicle ID format").optional(),
 });
 
 const setActiveVehicleSchema = z.object({

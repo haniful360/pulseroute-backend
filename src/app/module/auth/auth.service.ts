@@ -39,14 +39,14 @@ const sendVerificationEmail = async (
   email: string,
   name: string,
   otp: string,
-  role: "USER" | "DRIVER"
+  role: "USER" | "DRIVER",
 ) => {
   const templatePath = path.join(
     process.cwd(),
     "src",
     "app",
     "templates",
-    "otp-verification.ejs"
+    "otp-verification.ejs",
   );
 
   const html = await ejs.renderFile(templatePath, {
@@ -78,14 +78,14 @@ const sendVerificationEmail = async (
 const sendResetPasswordEmail = async (
   email: string,
   name: string,
-  otp: string
+  otp: string,
 ) => {
   const templatePath = path.join(
     process.cwd(),
     "src",
     "app",
     "templates",
-    "reset-password-otp.ejs"
+    "reset-password-otp.ejs",
   );
 
   const html = await ejs.renderFile(templatePath, {
@@ -119,7 +119,7 @@ const sendPasswordChangedEmail = async (email: string, name: string) => {
     "src",
     "app",
     "templates",
-    "password-changed.ejs"
+    "password-changed.ejs",
   );
 
   const changedTime = new Date().toLocaleString("en-US", {
@@ -150,14 +150,14 @@ const sendLoginWelcomeEmail = async (
   email: string,
   name: string,
   role: Role,
-  authMethod: "Google Sign-In" | "Email & Password"
+  authMethod: "Google Sign-In" | "Email & Password",
 ) => {
   const templatePath = path.join(
     process.cwd(),
     "src",
     "app",
     "templates",
-    "login-welcome.ejs"
+    "login-welcome.ejs",
   );
 
   const loginTime = new Date().toLocaleString("en-US", {
@@ -196,7 +196,7 @@ const registerUser = async (payload: IRegisterUserPayload) => {
   if (isUserExists) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "A user with this email already exists"
+      "A user with this email already exists",
     );
   }
 
@@ -238,7 +238,7 @@ const registerDriver = async (payload: IRegisterDriverPayload) => {
   if (isUserExists) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "An account with this email already exists"
+      "An account with this email already exists",
     );
   }
 
@@ -249,7 +249,7 @@ const registerDriver = async (payload: IRegisterDriverPayload) => {
   if (isLicenseExists) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "A driver with this license number already exists"
+      "A driver with this license number already exists",
     );
   }
 
@@ -260,7 +260,7 @@ const registerDriver = async (payload: IRegisterDriverPayload) => {
     if (isVehicleExists) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        "A vehicle with this license plate / vehicle number already exists"
+        "A vehicle with this license plate / vehicle number already exists",
       );
     }
   }
@@ -309,7 +309,7 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
     if (storedUserOtp !== inputOtp) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        "Invalid OTP. Please enter the correct 6-digit code."
+        "Invalid OTP. Please enter the correct 6-digit code.",
       );
     }
 
@@ -317,7 +317,7 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
     if (!cachedDataStr) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        "Registration session has expired. Please register again."
+        "Registration session has expired. Please register again.",
       );
     }
 
@@ -370,17 +370,22 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
     const accessToken = jwtUtils.createToken(
       jwtPayload,
       config.jwt_access_secret,
-      config.jwt_access_expires_in
+      config.jwt_access_expires_in,
     );
 
     const refreshToken = jwtUtils.createToken(
       jwtPayload,
       config.jwt_refresh_secret,
-      config.jwt_refresh_expires_in
+      config.jwt_refresh_expires_in,
     );
 
     // Send welcome email upon successful activation
-    await sendLoginWelcomeEmail(user.email, user.name, user.role, "Email & Password");
+    await sendLoginWelcomeEmail(
+      user.email,
+      user.name,
+      user.role,
+      "Email & Password",
+    );
 
     return {
       type: "USER" as const,
@@ -397,7 +402,7 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
     if (storedDriverOtp !== inputOtp) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        "Invalid OTP. Please enter the correct 6-digit code."
+        "Invalid OTP. Please enter the correct 6-digit code.",
       );
     }
 
@@ -405,7 +410,7 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
     if (!cachedDataStr) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        "Driver registration session has expired. Please register again."
+        "Driver registration session has expired. Please register again.",
       );
     }
 
@@ -501,17 +506,22 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
     const accessToken = jwtUtils.createToken(
       jwtPayload,
       config.jwt_access_secret,
-      config.jwt_access_expires_in
+      config.jwt_access_expires_in,
     );
 
     const refreshToken = jwtUtils.createToken(
       jwtPayload,
       config.jwt_refresh_secret,
-      config.jwt_refresh_expires_in
+      config.jwt_refresh_expires_in,
     );
 
     // Send welcome email upon driver verification
-    await sendLoginWelcomeEmail(result.user.email, result.user.name, result.user.role, "Email & Password");
+    await sendLoginWelcomeEmail(
+      result.user.email,
+      result.user.name,
+      result.user.role,
+      "Email & Password",
+    );
 
     return {
       type: "DRIVER" as const,
@@ -524,7 +534,7 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
 
   throw new AppError(
     httpStatus.BAD_REQUEST,
-    "No pending registration found for this email, or the OTP has expired. Please register again."
+    "No pending registration found for this email, or the OTP has expired. Please register again.",
   );
 };
 
@@ -577,7 +587,7 @@ const resendOtp = async (payload: IResendOtpPayload) => {
 
   throw new AppError(
     httpStatus.NOT_FOUND,
-    "No pending registration session found for this email. Please register again."
+    "No pending registration session found for this email. Please register again.",
   );
 };
 
@@ -591,21 +601,21 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
   if (!user) {
     throw new AppError(
       httpStatus.NOT_FOUND,
-      "No account found with this email address"
+      "No account found with this email address",
     );
   }
 
   if (user.isDeleted || user.status === UserStatus.DELETED) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "This account has been permanently deleted"
+      "This account has been permanently deleted",
     );
   }
 
   if (user.status === UserStatus.BLOCKED) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "This account has been blocked. Please contact support."
+      "This account has been blocked. Please contact support.",
     );
   }
 
@@ -640,14 +650,14 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   if (user.isDeleted || user.status === UserStatus.DELETED) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "This account has been permanently deleted"
+      "This account has been permanently deleted",
     );
   }
 
   if (user.status === UserStatus.BLOCKED) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "This account has been blocked. Please contact support."
+      "This account has been blocked. Please contact support.",
     );
   }
 
@@ -657,14 +667,14 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   if (!storedOtp) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Password reset code has expired or is invalid. Please request a new one."
+      "Password reset code has expired or is invalid. Please request a new one.",
     );
   }
 
   if (storedOtp !== inputOtp) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Invalid OTP code. Please enter the correct 6-digit code."
+      "Invalid OTP code. Please enter the correct 6-digit code.",
     );
   }
 
@@ -698,7 +708,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
   if (!idToken) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Google ID token is required in body (as idToken or token)"
+      "Google ID token is required in body (as idToken or token)",
     );
   }
 
@@ -714,14 +724,14 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
     console.error("Google ID token verification failed:", error);
     throw new AppError(
       httpStatus.UNAUTHORIZED,
-      "Google ID token verification failed. Please try signing in again."
+      "Google ID token verification failed. Please try signing in again.",
     );
   }
 
   if (!googleIdTokenPayload) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Google ID token payload is missing"
+      "Google ID token payload is missing",
     );
   }
 
@@ -730,7 +740,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
   if (!email || !name || !googleId) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Google ID token payload is missing required fields (email, name, sub)"
+      "Google ID token payload is missing required fields (email, name, sub)",
     );
   }
 
@@ -757,17 +767,14 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
     if (existingUser.status === UserStatus.BLOCKED) {
       throw new AppError(
         httpStatus.FORBIDDEN,
-        "Your account has been blocked. Please contact support."
+        "Your account has been blocked. Please contact support.",
       );
     }
 
-    if (
-      existingUser.isDeleted ||
-      existingUser.status === UserStatus.DELETED
-    ) {
+    if (existingUser.isDeleted || existingUser.status === UserStatus.DELETED) {
       throw new AppError(
         httpStatus.FORBIDDEN,
-        "This account has been permanently deleted"
+        "This account has been permanently deleted",
       );
     }
 
@@ -828,7 +835,12 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
   }
 
   // Send login welcome email with login details
-  await sendLoginWelcomeEmail(user.email, user.name, user.role, "Google Sign-In");
+  await sendLoginWelcomeEmail(
+    user.email,
+    user.name,
+    user.role,
+    "Google Sign-In",
+  );
 
   // Extract dynamic profile
   let profile = null;
@@ -850,13 +862,13 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
   const accessToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_access_secret,
-    config.jwt_access_expires_in
+    config.jwt_access_expires_in,
   );
 
   const refreshToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_refresh_secret,
-    config.jwt_refresh_expires_in
+    config.jwt_refresh_expires_in,
   );
 
   const {
@@ -871,8 +883,8 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
     user.role === Role.SUPER_ADMIN
       ? "Super Administrator"
       : user.role === Role.DRIVER
-      ? "Ambulance Driver"
-      : "User";
+        ? "Ambulance Driver"
+        : "User";
 
   return {
     user: sanitizedUser,
@@ -900,33 +912,36 @@ const loginUser = async (payload: ILoginUserPayload) => {
   });
 
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, "No account found with this email");
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "No account found with this email",
+    );
   }
 
   if (user.isDeleted || user.status === UserStatus.DELETED) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "This account has been permanently deleted"
+      "This account has been permanently deleted",
     );
   }
 
   if (user.status === UserStatus.BLOCKED) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "Your account has been blocked. Please contact support."
+      "Your account has been blocked. Please contact support.",
     );
   }
 
   if (!user.password) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "This account was registered via Google Login. Please sign in with Google."
+      "This account was registered via Google Login. Please sign in with Google.",
     );
   }
 
   const isPasswordMatched = await bcrypt.compare(
     payload.password,
-    user.password
+    user.password,
   );
 
   if (!isPasswordMatched) {
@@ -934,7 +949,12 @@ const loginUser = async (payload: ILoginUserPayload) => {
   }
 
   // Send login welcome email with login details
-  await sendLoginWelcomeEmail(user.email, user.name, user.role, "Email & Password");
+  await sendLoginWelcomeEmail(
+    user.email,
+    user.name,
+    user.role,
+    "Email & Password",
+  );
 
   // Extract relevant profile dynamically based on user role
   let profile = null;
@@ -956,13 +976,13 @@ const loginUser = async (payload: ILoginUserPayload) => {
   const accessToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_access_secret,
-    config.jwt_access_expires_in
+    config.jwt_access_expires_in,
   );
 
   const refreshToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_refresh_secret,
-    config.jwt_refresh_expires_in
+    config.jwt_refresh_expires_in,
   );
 
   const {
@@ -977,8 +997,8 @@ const loginUser = async (payload: ILoginUserPayload) => {
     user.role === Role.SUPER_ADMIN
       ? "Super Administrator"
       : user.role === Role.DRIVER
-      ? "Ambulance Driver"
-      : "User";
+        ? "Ambulance Driver"
+        : "User";
 
   return {
     user: sanitizedUser,
@@ -1022,12 +1042,7 @@ const getMe = async (userPayload: IRequestUser) => {
     profile = user.admin;
   }
 
-  const {
-    patient: _pat,
-    driver: _drv,
-    admin: _adm,
-    ...sanitizedUser
-  } = user;
+  const { patient: _pat, driver: _drv, admin: _adm, ...sanitizedUser } = user;
 
   return {
     user: sanitizedUser,
@@ -1037,7 +1052,7 @@ const getMe = async (userPayload: IRequestUser) => {
 
 const changePassword = async (
   userPayload: IRequestUser,
-  payload: IChangePasswordPayload
+  payload: IChangePasswordPayload,
 ) => {
   const user = await prisma.user.findUnique({
     where: { id: userPayload.userId },
@@ -1050,13 +1065,13 @@ const changePassword = async (
   if (!user.password) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Account registered without password. Please use set-password."
+      "Account registered without password. Please use set-password.",
     );
   }
 
   const isOldPasswordCorrect = await bcrypt.compare(
     payload.oldPassword,
-    user.password
+    user.password,
   );
 
   if (!isOldPasswordCorrect) {
@@ -1066,7 +1081,7 @@ const changePassword = async (
   if (payload.oldPassword === payload.newPassword) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "New password cannot be the same as current password"
+      "New password cannot be the same as current password",
     );
   }
 
@@ -1089,13 +1104,13 @@ const changePassword = async (
 const refreshToken = async (token: string) => {
   const verifiedRefreshToken = jwtUtils.verifyToken(
     token,
-    config.jwt_refresh_secret
+    config.jwt_refresh_secret,
   );
 
   if (!verifiedRefreshToken.success || !verifiedRefreshToken.data) {
     throw new AppError(
       httpStatus.UNAUTHORIZED,
-      verifiedRefreshToken.error || "Invalid or expired refresh token"
+      verifiedRefreshToken.error || "Invalid or expired refresh token",
     );
   }
 
@@ -1108,7 +1123,7 @@ const refreshToken = async (token: string) => {
   if (!user || user.isDeleted || user.status !== UserStatus.ACTIVE) {
     throw new AppError(
       httpStatus.UNAUTHORIZED,
-      "User account is inactive or not found"
+      "User account is inactive or not found",
     );
   }
 
@@ -1122,13 +1137,13 @@ const refreshToken = async (token: string) => {
   const accessToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_access_secret,
-    config.jwt_access_expires_in
+    config.jwt_access_expires_in,
   );
 
   const newRefreshToken = jwtUtils.createToken(
     jwtPayload,
     config.jwt_refresh_secret,
-    config.jwt_refresh_expires_in
+    config.jwt_refresh_expires_in,
   );
 
   return {

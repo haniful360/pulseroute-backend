@@ -43,6 +43,12 @@ export const driverSchemas = {
         example: 45.0,
         description: "Current travel speed in km/h",
       },
+      vehicleId: {
+        type: "string",
+        format: "uuid",
+        example: "a8e1b369-e37d-4b82-9657-36e3981881f2",
+        description: "Optional. Set or update current active vehicle along with location",
+      },
     },
   },
   SetActiveVehicleRequest: {

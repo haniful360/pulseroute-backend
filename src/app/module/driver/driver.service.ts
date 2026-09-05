@@ -110,6 +110,25 @@ const updateLocation = async (
     throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
   }
 
+  let targetVehicleId = driver.currentVehicleId;
+  if (payload.vehicleId) {
+    const vehicle = await prisma.vehicle.findFirst({
+      where: {
+        id: payload.vehicleId,
+        driverId: driver.id,
+        isDeleted: false,
+      },
+    });
+
+    if (!vehicle) {
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        "Vehicle not found or does not belong to your account",
+      );
+    }
+    targetVehicleId = vehicle.id;
+  }
+
   const [updatedDriver] = await prisma.$transaction([
     prisma.driver.update({
       where: { id: driver.id },
@@ -117,6 +136,7 @@ const updateLocation = async (
         currentLatitude: payload.latitude,
         currentLongitude: payload.longitude,
         currentHeading: payload.heading ?? driver.currentHeading,
+        currentVehicleId: targetVehicleId,
         lastLocationUpdate: new Date(),
       },
     }),
@@ -136,6 +156,7 @@ const updateLocation = async (
     currentLatitude: updatedDriver.currentLatitude,
     currentLongitude: updatedDriver.currentLongitude,
     currentHeading: updatedDriver.currentHeading,
+    currentVehicleId: updatedDriver.currentVehicleId,
     lastLocationUpdate: updatedDriver.lastLocationUpdate,
   };
 };
