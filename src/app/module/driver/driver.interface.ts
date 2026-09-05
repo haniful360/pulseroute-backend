@@ -15,10 +15,6 @@ export interface IUpdateLocationPayload {
   vehicleId?: string;
 }
 
-export interface ISetActiveVehiclePayload {
-  vehicleId: string;
-}
-
 export interface IVerifyDriverPayload {
   status: DriverVerificationStatus;
   reason?: string;

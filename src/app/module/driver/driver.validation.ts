@@ -26,12 +26,6 @@ const updateLocationSchema = z.object({
   vehicleId: z.string().uuid("Invalid Vehicle ID format").optional(),
 });
 
-const setActiveVehicleSchema = z.object({
-  vehicleId: z
-    .string({ message: "Vehicle ID is required" })
-    .uuid("Invalid Vehicle ID format"),
-});
-
 const verifyDriverSchema = z.object({
   status: z.enum([
     DriverVerificationStatus.APPROVED,
@@ -45,6 +39,5 @@ const verifyDriverSchema = z.object({
 export const DriverValidation = {
   updateDutyStatusSchema,
   updateLocationSchema,
-  setActiveVehicleSchema,
   verifyDriverSchema,
 };

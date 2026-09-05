@@ -12,7 +12,6 @@ import { prisma } from "../../lib/prisma";
 import { IRequestUser } from "../auth/auth.interface";
 import {
   IDriverFilterRequest,
-  ISetActiveVehiclePayload,
   IUpdateDutyStatusPayload,
   IUpdateLocationPayload,
   IVerifyDriverPayload,
@@ -161,55 +160,6 @@ const updateLocation = async (
   };
 };
 
-const setActiveVehicle = async (
-  authUser: IRequestUser,
-  payload: ISetActiveVehiclePayload,
-) => {
-  const driver = await prisma.driver.findUnique({
-    where: {
-      userId: authUser.userId,
-    },
-  });
-
-  if (!driver || driver.isDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
-  }
-
-  // Ensure vehicle exists and belongs to driver
-  const vehicle = await prisma.vehicle.findFirst({
-    where: {
-      id: payload.vehicleId,
-      driverId: driver.id,
-      isDeleted: false,
-    },
-  });
-
-  if (!vehicle) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Vehicle not found or does not belong to your account",
-    );
-  }
-
-  const updatedDriver = await prisma.driver.update({
-    where: { id: driver.id },
-    data: {
-      currentVehicleId: payload.vehicleId,
-      // If setting unapproved vehicle while ONLINE, turn duty status OFFLINE
-      dutyStatus:
-        vehicle.verificationStatus !== VehicleVerificationStatus.APPROVED &&
-        driver.dutyStatus === DutyStatus.ONLINE
-          ? DutyStatus.OFFLINE
-          : driver.dutyStatus,
-    },
-    include: {
-      currentVehicle: true,
-      vehicles: true,
-    },
-  });
-
-  return updatedDriver;
-};
 
 const getAllDrivers = async (filters: IDriverFilterRequest) => {
   const page = Number(filters.page) > 0 ? Number(filters.page) : 1;
@@ -602,7 +552,6 @@ export const DriverService = {
   getDriverDashboardOverview,
   updateDutyStatus,
   updateLocation,
-  setActiveVehicle,
   getAllDrivers,
   getDriverById,
   verifyDriver,

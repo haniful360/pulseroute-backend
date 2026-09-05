@@ -34,12 +34,6 @@ router.patch(
   DriverController.updateLocation,
 );
 
-router.patch(
-  "/active-vehicle",
-  auth(Role.DRIVER),
-  validateRequest(DriverValidation.setActiveVehicleSchema),
-  DriverController.setActiveVehicle,
-);
 
 // Admin-only driver verification & management endpoints
 router.get("/", auth(Role.SUPER_ADMIN), DriverController.getAllDrivers);
