@@ -5,6 +5,8 @@ import {
   EmergencySeverity,
   NotificationType,
   OfferStatus,
+  PaymentMethod,
+  PaymentStatus,
   Role,
   TripStatus,
   VehicleVerificationStatus,
@@ -561,7 +563,7 @@ const updateTripStatus = async (
       });
     }
 
-    // 4. If COMPLETED, release driver back to ONLINE
+    // 4. If COMPLETED, release driver back to ONLINE and automatically generate invoice
     if (payload.status === TripStatus.COMPLETED) {
       await tx.driver.update({
         where: { id: driver.id },
@@ -569,6 +571,58 @@ const updateTripStatus = async (
           dutyStatus: DutyStatus.ONLINE,
         },
       });
+
+      // Automatically generate Invoice for the completed trip
+      const existingInvoice = await tx.invoice.findUnique({
+        where: { tripId: trip.id },
+      });
+
+      if (!existingInvoice && trip.driverId) {
+        const pricingConfig = await tx.pricingConfig.findUnique({
+          where: { ambulanceType: trip.ambulanceType },
+        });
+
+        const baseFare = Number(pricingConfig?.baseFare || 500.0);
+        const distanceFare = Number(
+          (
+            (trip.distanceKm || 1.0) * Number(pricingConfig?.perKmRate || 50.0)
+          ).toFixed(2),
+        );
+        const totalAmount = trip.estimatedFare
+          ? Number(trip.estimatedFare)
+          : Number((baseFare + distanceFare).toFixed(2));
+
+        const commissionRate = pricingConfig?.platformCommissionRate || 0.12;
+        const platformCommission = Number(
+          (totalAmount * commissionRate).toFixed(2),
+        );
+        const driverEarning = Number(
+          (totalAmount - platformCommission).toFixed(2),
+        );
+
+        const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+        const randomSuffix = Math.random()
+          .toString(36)
+          .substring(2, 6)
+          .toUpperCase();
+        const invoiceNumber = `INV-${dateStr}-${randomSuffix}`;
+
+        await tx.invoice.create({
+          data: {
+            invoiceNumber,
+            tripId: trip.id,
+            patientId: trip.patientId,
+            driverId: trip.driverId,
+            baseFare,
+            distanceFare,
+            totalAmount,
+            platformCommission,
+            driverEarning,
+            paymentStatus: PaymentStatus.UNPAID,
+            paymentMethod: PaymentMethod.CASH,
+          },
+        });
+      }
     }
 
     return updatedTrip;

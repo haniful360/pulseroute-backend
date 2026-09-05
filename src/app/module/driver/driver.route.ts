@@ -34,7 +34,6 @@ router.patch(
   DriverController.updateLocation,
 );
 
-
 // Admin-only driver verification & management endpoints
 router.get("/", auth(Role.SUPER_ADMIN), DriverController.getAllDrivers);
 

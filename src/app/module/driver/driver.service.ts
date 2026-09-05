@@ -160,7 +160,6 @@ const updateLocation = async (
   };
 };
 
-
 const getAllDrivers = async (filters: IDriverFilterRequest) => {
   const page = Number(filters.page) > 0 ? Number(filters.page) : 1;
   const limit = Number(filters.limit) > 0 ? Number(filters.limit) : 10;
