@@ -20,7 +20,7 @@ export interface ISetActiveVehiclePayload {
 
 export interface IVerifyDriverPayload {
   status: DriverVerificationStatus;
-  rejectionReason?: string;
+  reason?: string;
 }
 
 export interface IDriverFilterRequest {

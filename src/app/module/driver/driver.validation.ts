@@ -38,7 +38,7 @@ const verifyDriverSchema = z.object({
     DriverVerificationStatus.SUSPENDED,
     DriverVerificationStatus.PENDING,
   ]),
-  rejectionReason: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 export const DriverValidation = {

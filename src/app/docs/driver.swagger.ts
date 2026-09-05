@@ -67,10 +67,10 @@ export const driverSchemas = {
         example: "APPROVED",
         description: "Driver verification decision",
       },
-      rejectionReason: {
+      reason: {
         type: "string",
-        example: "License copy was expired or unreadable",
-        description: "Reason provided if driver is rejected or suspended",
+        example: "License copy was verified and background check completed",
+        description: "Reason or remarks for verification decision",
       },
     },
   },
