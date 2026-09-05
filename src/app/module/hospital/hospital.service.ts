@@ -250,7 +250,7 @@ const getPublicAlertByToken = async (token: string) => {
               ambulanceType: true,
               hasOxygen: true,
               hasVentilator: true,
-              hasLifeSupport: true,
+              hasDefibrillator: true,
             },
           },
         },

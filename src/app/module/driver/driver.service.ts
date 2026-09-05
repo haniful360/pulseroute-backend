@@ -435,7 +435,7 @@ const getDriverDashboardOverview = async (authUser: IRequestUser) => {
       orderBy: { createdAt: "desc" },
       include: {
         patient: { select: { name: true, contactNumber: true } },
-        vehicle: { select: { ambulanceType: true, registrationNumber: true } },
+        vehicle: { select: { ambulanceType: true, vehicleNumber: true } },
         invoice: { select: { totalAmount: true, paymentStatus: true } },
       },
     }),
