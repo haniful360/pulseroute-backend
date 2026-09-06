@@ -31,7 +31,7 @@ export const getSwaggerHtml = () => `<!DOCTYPE html>
           SwaggerUIStandalonePreset
         ],
         layout: "StandaloneLayout",
-        docExpansion: "none",
+        docExpansion: "list",
         persistAuthorization: true
       });
     };

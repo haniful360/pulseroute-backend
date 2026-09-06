@@ -62,7 +62,13 @@ app.get(["/api-docs", "/api-docs/"], (_req: Request, res: Response) => {
   res.status(httpStatus.OK).send(getSwaggerHtml());
 });
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, {
+    swaggerOptions: { docExpansion: "list", persistAuthorization: true },
+  }),
+);
 
 // Application routes
 app.use("/api/v1/auth", AuthRoutes);
