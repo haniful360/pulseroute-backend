@@ -7,6 +7,7 @@ const createPaymentIntentSchema = z.object({
 const confirmPaymentSchema = z.object({
   invoiceId: z.string({ message: "Invoice ID is required" }),
   paymentIntentId: z.string({ message: "Payment Intent ID is required" }),
+  paymentMethodId: z.string().optional(),
 });
 
 export const PaymentValidation = {

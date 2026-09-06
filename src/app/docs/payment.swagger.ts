@@ -51,6 +51,12 @@ export const paymentSchemas = {
         type: "string",
         example: "pi_3MtwBwLkdIwHu7ix28a3tqPa",
       },
+      paymentMethodId: {
+        type: "string",
+        example: "pm_card_visa",
+        description:
+          "Optional. In test mode or Swagger testing, defaults to 'pm_card_visa' to auto-confirm without frontend card UI.",
+      },
     },
   },
 };

@@ -20,11 +20,12 @@ const createPaymentIntent = catchAsync(async (req: Request, res: Response) => {
 
 const confirmPayment = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
-  const { invoiceId, paymentIntentId } = req.body;
+  const { invoiceId, paymentIntentId, paymentMethodId } = req.body;
   const result = await PaymentService.confirmPayment(
     user,
     invoiceId,
     paymentIntentId,
+    paymentMethodId,
   );
 
   sendResponse(res, {

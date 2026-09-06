@@ -62,6 +62,7 @@ const createPaymentIntent = async (
     },
     automatic_payment_methods: {
       enabled: true,
+      allow_redirects: "never",
     },
   });
 
@@ -78,6 +79,7 @@ const confirmPayment = async (
   authUser: IRequestUser,
   invoiceId: string,
   paymentIntentId: string,
+  paymentMethodId?: string,
 ) => {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
@@ -105,7 +107,29 @@ const confirmPayment = async (
   }
 
   // Retrieve payment intent directly from Stripe
-  const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  let intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+  const returnUrl = `${config.frontend_url || "http://localhost:3000"}/payment/success`;
+
+  // If status is 'requires_payment_method', allow test mode auto-confirmation or explicit paymentMethodId
+  if (intent.status === "requires_payment_method") {
+    const testMethod =
+      paymentMethodId ||
+      (config.stripe_secret_key?.startsWith("sk_test_")
+        ? "pm_card_visa"
+        : undefined);
+
+    if (testMethod) {
+      intent = await stripe.paymentIntents.confirm(paymentIntentId, {
+        payment_method: testMethod,
+        return_url: returnUrl,
+      });
+    }
+  } else if (intent.status === "requires_confirmation") {
+    intent = await stripe.paymentIntents.confirm(paymentIntentId, {
+      return_url: returnUrl,
+    });
+  }
 
   if (intent.status !== "succeeded") {
     throw new AppError(
