@@ -5,10 +5,9 @@ export const invoiceSchemas = {
     properties: {
       paymentMethod: {
         type: "string",
-        enum: ["CASH", "STRIPE"],
-        example: "CASH",
-        description:
-          "Payment settlement method. CASH triggers commission deduction; STRIPE credits net earnings to driver wallet.",
+        enum: ["STRIPE"],
+        example: "STRIPE",
+        description: "Online payment settlement via Stripe.",
       },
       paidAmount: {
         type: "number",
@@ -47,7 +46,7 @@ export const invoiceSchemas = {
           platformCommission: { type: "string", example: "300.00" },
           driverEarning: { type: "string", example: "2200.00" },
           paymentStatus: { type: "string", example: "PAID" },
-          paymentMethod: { type: "string", example: "CASH" },
+          paymentMethod: { type: "string", example: "STRIPE" },
           paidAmount: { type: "string", example: "2500.00" },
           issuedAt: { type: "string", format: "date-time" },
           paidAt: { type: "string", format: "date-time", nullable: true },
@@ -160,7 +159,7 @@ export const invoicePaths = {
         {
           name: "paymentMethod",
           in: "query",
-          schema: { type: "string", enum: ["CASH", "STRIPE"] },
+          schema: { type: "string", enum: ["STRIPE"] },
         },
       ],
       responses: {
@@ -277,7 +276,7 @@ export const invoicePaths = {
           name: "paymentMethod",
           in: "query",
           required: false,
-          schema: { type: "string", enum: ["CASH", "STRIPE"] },
+          schema: { type: "string", enum: ["STRIPE"] },
         },
       ],
       responses: {

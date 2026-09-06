@@ -76,7 +76,7 @@ const generateInvoiceForTrip = async (tripId: string) => {
       platformCommission,
       driverEarning,
       paymentStatus: PaymentStatus.UNPAID,
-      paymentMethod: PaymentMethod.CASH,
+      paymentMethod: PaymentMethod.STRIPE,
     },
     include: {
       trip: {
@@ -161,11 +161,7 @@ const payInvoice = async (
         amount: paidAmount,
         paymentMethod: payload.paymentMethod,
         status: PaymentStatus.PAID,
-        paymentGateway:
-          payload.paymentGateway ||
-          (payload.paymentMethod === PaymentMethod.STRIPE
-            ? "STRIPE"
-            : "CASH_IN_HAND"),
+        paymentGateway: payload.paymentGateway || "STRIPE",
         gatewayTransactionId: payload.gatewayTransactionId,
         paidAt: now,
       },

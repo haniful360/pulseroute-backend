@@ -116,74 +116,46 @@ const processTripPayment = async (tx: any, invoice: any) => {
   const driverEarning = Number(invoice.driverEarning);
   const currentBalance = Number(wallet.balance);
 
-  if (invoice.paymentMethod === "CASH") {
-    // Patient paid cash in person to the driver.
-    // Driver holds totalAmount. Platform commission is debited from driver's wallet.
-    const newBalance = Number((currentBalance - platformCommission).toFixed(2));
+  // Online / Stripe payment: money went to platform.
+  // Driver wallet is credited with net earnings (totalAmount - commission).
+  const newBalance = Number((currentBalance + driverEarning).toFixed(2));
 
-    await tx.driverWallet.update({
-      where: { id: wallet.id },
-      data: {
-        balance: newBalance,
-        totalEarnings: { increment: driverEarning },
-        totalCommissionPaid: { increment: platformCommission },
-      },
-    });
+  await tx.driverWallet.update({
+    where: { id: wallet.id },
+    data: {
+      balance: newBalance,
+      totalEarnings: { increment: driverEarning },
+      totalCommissionPaid: { increment: platformCommission },
+    },
+  });
 
-    await tx.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        tripId: invoice.tripId,
-        amount: platformCommission,
-        type: TransactionType.COMMISSION_DEDUCTION,
-        direction: TransactionDirection.DEBIT,
-        status: TransactionStatus.COMPLETED,
-        balanceAfter: newBalance,
-        description: `Platform commission deducted for Cash Trip (${invoice.invoiceNumber})`,
-      },
-    });
-  } else {
-    // Online / Stripe payment: money went to platform.
-    // Driver wallet is credited with net earnings (totalAmount - commission).
-    const newBalance = Number((currentBalance + driverEarning).toFixed(2));
+  // 1. Credit trip earning record
+  await tx.walletTransaction.create({
+    data: {
+      walletId: wallet.id,
+      tripId: invoice.tripId,
+      amount: totalAmount,
+      type: TransactionType.TRIP_EARNING,
+      direction: TransactionDirection.CREDIT,
+      status: TransactionStatus.COMPLETED,
+      balanceAfter: currentBalance + totalAmount,
+      description: `Trip earning for Invoice ${invoice.invoiceNumber}`,
+    },
+  });
 
-    await tx.driverWallet.update({
-      where: { id: wallet.id },
-      data: {
-        balance: newBalance,
-        totalEarnings: { increment: driverEarning },
-        totalCommissionPaid: { increment: platformCommission },
-      },
-    });
-
-    // 1. Credit trip earning record
-    await tx.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        tripId: invoice.tripId,
-        amount: totalAmount,
-        type: TransactionType.TRIP_EARNING,
-        direction: TransactionDirection.CREDIT,
-        status: TransactionStatus.COMPLETED,
-        balanceAfter: currentBalance + totalAmount,
-        description: `Trip earning for Invoice ${invoice.invoiceNumber}`,
-      },
-    });
-
-    // 2. Debit commission record
-    await tx.walletTransaction.create({
-      data: {
-        walletId: wallet.id,
-        tripId: invoice.tripId,
-        amount: platformCommission,
-        type: TransactionType.COMMISSION_DEDUCTION,
-        direction: TransactionDirection.DEBIT,
-        status: TransactionStatus.COMPLETED,
-        balanceAfter: newBalance,
-        description: `Platform commission deduction for Invoice ${invoice.invoiceNumber}`,
-      },
-    });
-  }
+  // 2. Debit commission record
+  await tx.walletTransaction.create({
+    data: {
+      walletId: wallet.id,
+      tripId: invoice.tripId,
+      amount: platformCommission,
+      type: TransactionType.COMMISSION_DEDUCTION,
+      direction: TransactionDirection.DEBIT,
+      status: TransactionStatus.COMPLETED,
+      balanceAfter: newBalance,
+      description: `Platform commission deduction for Invoice ${invoice.invoiceNumber}`,
+    },
+  });
 };
 
 const createPayoutRequest = async (

@@ -12,10 +12,9 @@ export const walletSchemas = {
       },
       paymentMethod: {
         type: "string",
-        enum: ["CASH", "STRIPE"],
-        example: "CASH",
-        description:
-          "Payout channel (e.g. CASH / Mobile Banking / Stripe Direct).",
+        enum: ["STRIPE"],
+        example: "STRIPE",
+        description: "Payout channel (e.g. Stripe Direct Transfer).",
       },
       accountNumber: {
         type: "string",
@@ -123,7 +122,7 @@ export const walletSchemas = {
           amount: { type: "string", example: "5000.00" },
           status: { type: "string", example: "REQUESTED" },
           accountNumber: { type: "string", example: "01811223344" },
-          paymentMethod: { type: "string", example: "CASH" },
+          paymentMethod: { type: "string", example: "STRIPE" },
           createdAt: { type: "string", format: "date-time" },
         },
       },

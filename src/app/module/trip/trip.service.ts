@@ -619,7 +619,7 @@ const updateTripStatus = async (
             platformCommission,
             driverEarning,
             paymentStatus: PaymentStatus.UNPAID,
-            paymentMethod: PaymentMethod.CASH,
+            paymentMethod: PaymentMethod.STRIPE,
           },
         });
       }
