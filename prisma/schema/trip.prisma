@@ -41,7 +41,6 @@ model Trip {
   invoice            Invoice?
   review             Review?
   walletTransactions WalletTransaction[]
-  chatMessages       ChatMessage[]
   preAlerts          HospitalPreAlert[]
 
   @@index([patientId], name: "idx_trip_patientId")

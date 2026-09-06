@@ -21,9 +21,8 @@ model User {
   driver  Driver?
   admin   Admin?
 
-  // Notifications & Chats
+  // Notifications
   notifications Notification[]
-  sentMessages  ChatMessage[]  @relation("UserSentMessages")
 
   // Admin audit & verification relations
   verifiedDrivers  Driver[]        @relation("DriverVerifier")
