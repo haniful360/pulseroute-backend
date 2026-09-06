@@ -40,4 +40,3 @@ export interface IAcknowledgeAlertPayload {
   acknowledgedBy?: string;
   notes?: string;
 }
-

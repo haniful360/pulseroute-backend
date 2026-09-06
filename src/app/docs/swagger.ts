@@ -1,7 +1,6 @@
 import { analyticsPaths, analyticsSchemas } from "./analytics.swagger";
 import { chatSwaggerPaths } from "./chat.swagger";
 import { driverPaths, driverSchemas } from "./driver.swagger";
-import { hospitalPaths, hospitalSchemas } from "./hospital.swagger";
 import { invoicePaths, invoiceSchemas } from "./invoice.swagger";
 import { notificationPaths, notificationSchemas } from "./notification.swagger";
 import { paymentPaths, paymentSchemas } from "./payment.swagger";
@@ -54,7 +53,6 @@ export const swaggerDocument = {
       ...settingSchemas,
       ...paymentSchemas,
       ...notificationSchemas,
-      ...hospitalSchemas,
       RegisterUserRequest: {
         type: "object",
         required: ["name", "email", "password"],
@@ -747,6 +745,5 @@ export const swaggerDocument = {
     ...paymentPaths,
     ...notificationPaths,
     ...chatSwaggerPaths,
-    ...hospitalPaths,
   },
 };
