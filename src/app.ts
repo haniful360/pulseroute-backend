@@ -5,6 +5,7 @@ import httpStatus from "http-status";
 import swaggerUi from "swagger-ui-express";
 import config from "./app/config";
 import { swaggerDocument } from "./app/docs/swagger";
+import { getSwaggerHtml } from "./app/docs/swaggerUiHtml";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AnalyticsRoutes } from "./app/module/analytics/analytics.route";
@@ -52,6 +53,17 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Interactive Swagger API Documentation
+// Interactive Swagger API Documentation (CDN Standalone + Fallback)
+app.get("/api-docs.json", (_req: Request, res: Response) => {
+  res.setHeader("Content-Type", "application/json");
+  res.status(httpStatus.OK).json(swaggerDocument);
+});
+
+app.get(["/api-docs", "/api-docs/"], (_req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.status(httpStatus.OK).send(getSwaggerHtml());
+});
+
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Application routes
