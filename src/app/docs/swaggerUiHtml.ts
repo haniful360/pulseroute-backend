@@ -38,4 +38,3 @@ export const getSwaggerHtml = () => `<!DOCTYPE html>
   </script>
 </body>
 </html>`;
-

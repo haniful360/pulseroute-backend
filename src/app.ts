@@ -52,7 +52,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// Interactive Swagger API Documentation
 // Interactive Swagger API Documentation (CDN Standalone + Fallback)
 app.get("/api-docs.json", (_req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
