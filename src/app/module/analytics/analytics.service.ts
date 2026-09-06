@@ -172,7 +172,7 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
         currentVehicle: {
           select: {
             ambulanceType: true,
-            registrationNumber: true,
+            vehicleNumber: true,
             model: true,
           },
         },
@@ -197,7 +197,7 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
         currentVehicle: {
           select: {
             ambulanceType: true,
-            registrationNumber: true,
+            vehicleNumber: true,
           },
         },
       },
@@ -232,7 +232,7 @@ const getOverviewAnalytics = async (): Promise<IOverviewAnalytics> => {
         patient: { select: { id: true, name: true, contactNumber: true } },
         driver: { select: { id: true, name: true, contactNumber: true } },
         vehicle: {
-          select: { ambulanceType: true, registrationNumber: true },
+          select: { ambulanceType: true, vehicleNumber: true },
         },
       },
     }),

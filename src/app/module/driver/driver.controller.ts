@@ -55,18 +55,6 @@ const updateLocation = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const setActiveVehicle = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as IRequestUser;
-  const result = await DriverService.setActiveVehicle(user, req.body);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Active vehicle updated successfully",
-    data: result,
-  });
-});
-
 const getAllDrivers = catchAsync(async (req: Request, res: Response) => {
   const result = await DriverService.getAllDrivers(req.query);
 
@@ -113,7 +101,6 @@ export const DriverController = {
   getDriverDashboardOverview,
   updateDutyStatus,
   updateLocation,
-  setActiveVehicle,
   getAllDrivers,
   getDriverById,
   verifyDriver,

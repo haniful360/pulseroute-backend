@@ -12,15 +12,12 @@ export interface IUpdateLocationPayload {
   longitude: number;
   heading?: number;
   speed?: number;
-}
-
-export interface ISetActiveVehiclePayload {
-  vehicleId: string;
+  vehicleId?: string;
 }
 
 export interface IVerifyDriverPayload {
   status: DriverVerificationStatus;
-  rejectionReason?: string;
+  reason?: string;
 }
 
 export interface IDriverFilterRequest {

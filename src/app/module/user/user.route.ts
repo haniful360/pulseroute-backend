@@ -8,7 +8,7 @@ const router = Router();
 // User dashboard overview
 router.get(
   "/dashboard",
-  auth(Role.USER, Role.SUPER_ADMIN),
+  auth(Role.USER),
   UserController.getUserDashboardOverview,
 );
 

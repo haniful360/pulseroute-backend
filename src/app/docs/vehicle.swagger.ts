@@ -70,9 +70,9 @@ export const vehicleSchemas = {
         enum: ["APPROVED", "REJECTED", "PENDING"],
         example: "APPROVED",
       },
-      rejectionReason: {
+      reason: {
         type: "string",
-        example: "Fitness certificate invalid or expired",
+        example: "Vehicle inspection verified and equipment approved",
       },
     },
   },

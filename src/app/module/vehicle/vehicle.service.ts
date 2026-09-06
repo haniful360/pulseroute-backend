@@ -204,8 +204,10 @@ const getAllVehicles = async (filters: IVehicleFilterRequest) => {
 };
 
 const getVehicleById = async (id: string) => {
-  const vehicle = await prisma.vehicle.findUnique({
-    where: { id },
+  const normalizedId = id.trim();
+
+  let vehicle = await prisma.vehicle.findUnique({
+    where: { id: normalizedId },
     include: {
       driver: true,
       verifiedBy: {
@@ -217,6 +219,22 @@ const getVehicleById = async (id: string) => {
       },
     },
   });
+
+  if (!vehicle) {
+    vehicle = await prisma.vehicle.findUnique({
+      where: { vehicleNumber: normalizedId },
+      include: {
+        driver: true,
+        verifiedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
 
   if (!vehicle || vehicle.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, "Vehicle not found");
@@ -230,24 +248,42 @@ const verifyVehicle = async (
   id: string,
   payload: IVerifyVehiclePayload,
 ) => {
-  const vehicle = await prisma.vehicle.findUnique({
-    where: { id },
+  const normalizedId = id.trim();
+
+  let vehicle = await prisma.vehicle.findUnique({
+    where: { id: normalizedId },
   });
+
+  if (!vehicle) {
+    vehicle = await prisma.vehicle.findUnique({
+      where: { vehicleNumber: normalizedId },
+    });
+  }
 
   if (!vehicle || vehicle.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, "Vehicle not found");
   }
 
   const updatedVehicle = await prisma.vehicle.update({
-    where: { id },
+    where: { id: vehicle.id },
     data: {
       verificationStatus: payload.status,
       verifiedById: adminUser.userId,
       verifiedAt: new Date(),
       rejectionReason:
         payload.status === VehicleVerificationStatus.REJECTED
-          ? payload.rejectionReason || "Vehicle failed inspection standards"
+          ? payload.reason || "Vehicle failed inspection standards"
           : null,
+    },
+    include: {
+      driver: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          contactNumber: true,
+        },
+      },
     },
   });
 

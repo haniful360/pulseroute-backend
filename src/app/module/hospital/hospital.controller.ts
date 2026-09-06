@@ -68,7 +68,10 @@ const getPublicAlertByToken = catchAsync(
 
 const acknowledgeAlert = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await HospitalService.acknowledgeAlert(id as string, req.body);
+  const result = await HospitalService.acknowledgeAlert(
+    id as string,
+    req.body,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -101,3 +104,4 @@ export const HospitalController = {
   acknowledgeAlert,
   getHospitalActiveAlerts,
 };
+

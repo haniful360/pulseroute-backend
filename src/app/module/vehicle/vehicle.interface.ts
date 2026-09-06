@@ -30,7 +30,7 @@ export interface IUpdateVehiclePayload {
 
 export interface IVerifyVehiclePayload {
   status: VehicleVerificationStatus;
-  rejectionReason?: string;
+  reason?: string;
 }
 
 export interface IVehicleFilterRequest {

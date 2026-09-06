@@ -54,7 +54,7 @@ const verifyVehicleSchema = z.object({
     VehicleVerificationStatus.REJECTED,
     VehicleVerificationStatus.PENDING,
   ]),
-  rejectionReason: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 export const VehicleValidation = {

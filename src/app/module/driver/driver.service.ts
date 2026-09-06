@@ -12,7 +12,6 @@ import { prisma } from "../../lib/prisma";
 import { IRequestUser } from "../auth/auth.interface";
 import {
   IDriverFilterRequest,
-  ISetActiveVehiclePayload,
   IUpdateDutyStatusPayload,
   IUpdateLocationPayload,
   IVerifyDriverPayload,
@@ -110,6 +109,25 @@ const updateLocation = async (
     throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
   }
 
+  let targetVehicleId = driver.currentVehicleId;
+  if (payload.vehicleId) {
+    const vehicle = await prisma.vehicle.findFirst({
+      where: {
+        id: payload.vehicleId,
+        driverId: driver.id,
+        isDeleted: false,
+      },
+    });
+
+    if (!vehicle) {
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        "Vehicle not found or does not belong to your account",
+      );
+    }
+    targetVehicleId = vehicle.id;
+  }
+
   const [updatedDriver] = await prisma.$transaction([
     prisma.driver.update({
       where: { id: driver.id },
@@ -117,6 +135,7 @@ const updateLocation = async (
         currentLatitude: payload.latitude,
         currentLongitude: payload.longitude,
         currentHeading: payload.heading ?? driver.currentHeading,
+        currentVehicleId: targetVehicleId,
         lastLocationUpdate: new Date(),
       },
     }),
@@ -136,58 +155,9 @@ const updateLocation = async (
     currentLatitude: updatedDriver.currentLatitude,
     currentLongitude: updatedDriver.currentLongitude,
     currentHeading: updatedDriver.currentHeading,
+    currentVehicleId: updatedDriver.currentVehicleId,
     lastLocationUpdate: updatedDriver.lastLocationUpdate,
   };
-};
-
-const setActiveVehicle = async (
-  authUser: IRequestUser,
-  payload: ISetActiveVehiclePayload,
-) => {
-  const driver = await prisma.driver.findUnique({
-    where: {
-      userId: authUser.userId,
-    },
-  });
-
-  if (!driver || driver.isDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
-  }
-
-  // Ensure vehicle exists and belongs to driver
-  const vehicle = await prisma.vehicle.findFirst({
-    where: {
-      id: payload.vehicleId,
-      driverId: driver.id,
-      isDeleted: false,
-    },
-  });
-
-  if (!vehicle) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Vehicle not found or does not belong to your account",
-    );
-  }
-
-  const updatedDriver = await prisma.driver.update({
-    where: { id: driver.id },
-    data: {
-      currentVehicleId: payload.vehicleId,
-      // If setting unapproved vehicle while ONLINE, turn duty status OFFLINE
-      dutyStatus:
-        vehicle.verificationStatus !== VehicleVerificationStatus.APPROVED &&
-        driver.dutyStatus === DutyStatus.ONLINE
-          ? DutyStatus.OFFLINE
-          : driver.dutyStatus,
-    },
-    include: {
-      currentVehicle: true,
-      vehicles: true,
-    },
-  });
-
-  return updatedDriver;
 };
 
 const getAllDrivers = async (filters: IDriverFilterRequest) => {
@@ -257,8 +227,10 @@ const getAllDrivers = async (filters: IDriverFilterRequest) => {
 };
 
 const getDriverById = async (id: string) => {
-  const driver = await prisma.driver.findUnique({
-    where: { id },
+  const normalizedId = id.trim();
+
+  let driver = await prisma.driver.findUnique({
+    where: { id: normalizedId },
     include: {
       vehicles: true,
       currentVehicle: true,
@@ -282,6 +254,62 @@ const getDriverById = async (id: string) => {
     },
   });
 
+  if (!driver) {
+    driver = await prisma.driver.findUnique({
+      where: { userId: normalizedId },
+      include: {
+        vehicles: true,
+        currentVehicle: true,
+        wallet: true,
+        verifiedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            phone: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  if (!driver) {
+    driver = await prisma.driver.findFirst({
+      where: {
+        OR: [{ email: normalizedId }, { licenseNumber: normalizedId }],
+      },
+      include: {
+        vehicles: true,
+        currentVehicle: true,
+        wallet: true,
+        verifiedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            phone: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
   if (!driver || driver.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, "Driver not found");
   }
@@ -294,24 +322,40 @@ const verifyDriver = async (
   id: string,
   payload: IVerifyDriverPayload,
 ) => {
-  const driver = await prisma.driver.findUnique({
-    where: { id },
+  const normalizedId = id.trim();
+
+  let driver = await prisma.driver.findUnique({
+    where: { id: normalizedId },
   });
+
+  if (!driver) {
+    driver = await prisma.driver.findUnique({
+      where: { userId: normalizedId },
+    });
+  }
+
+  if (!driver) {
+    driver = await prisma.driver.findFirst({
+      where: {
+        OR: [{ email: normalizedId }, { licenseNumber: normalizedId }],
+      },
+    });
+  }
 
   if (!driver || driver.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, "Driver not found");
   }
 
   const updatedDriver = await prisma.driver.update({
-    where: { id },
+    where: { id: driver.id },
     data: {
       verificationStatus: payload.status,
       verifiedById: adminUser.userId,
       verifiedAt: new Date(),
       rejectionReason:
-        payload.status === DriverVerificationStatus.REJECTED
-          ? payload.rejectionReason ||
-            "Application does not meet platform requirements"
+        payload.status === DriverVerificationStatus.REJECTED ||
+        payload.status === DriverVerificationStatus.SUSPENDED
+          ? payload.reason || "Application does not meet platform requirements"
           : null,
       // If rejected or suspended, immediately turn dutyStatus OFFLINE
       dutyStatus:
@@ -322,6 +366,15 @@ const verifyDriver = async (
     },
     include: {
       currentVehicle: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+        },
+      },
     },
   });
 
@@ -435,7 +488,7 @@ const getDriverDashboardOverview = async (authUser: IRequestUser) => {
       orderBy: { createdAt: "desc" },
       include: {
         patient: { select: { name: true, contactNumber: true } },
-        vehicle: { select: { ambulanceType: true, registrationNumber: true } },
+        vehicle: { select: { ambulanceType: true, vehicleNumber: true } },
         invoice: { select: { totalAmount: true, paymentStatus: true } },
       },
     }),
@@ -498,7 +551,6 @@ export const DriverService = {
   getDriverDashboardOverview,
   updateDutyStatus,
   updateLocation,
-  setActiveVehicle,
   getAllDrivers,
   getDriverById,
   verifyDriver,

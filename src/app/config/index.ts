@@ -26,5 +26,6 @@ export default {
     process.env.SMTP_SENDER || `PulseRoute Support <${process.env.SMTP_USER}>`,
   google_client_id: process.env.GOOGLE_CLIENT_ID,
   stripe_secret_key: process.env.STRIPE_SECRET_KEY || "",
+  stripe_publishable_key: process.env.STRIPE_PUBLISHABLE_KEY || "",
   stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET || "",
 };

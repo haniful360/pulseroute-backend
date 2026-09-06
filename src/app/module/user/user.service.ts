@@ -14,6 +14,31 @@ import {
   IUserFilterRequest,
 } from "./user.interface";
 
+const formatUserResponse = (user: any) => {
+  if (!user) return null;
+  const { password: _, patient, driver, admin, ...userData } = user;
+
+  if (userData.role === Role.SUPER_ADMIN) {
+    return {
+      ...userData,
+      admin: admin || null,
+    };
+  }
+
+  if (userData.role === Role.DRIVER) {
+    return {
+      ...userData,
+      driver: driver || null,
+    };
+  }
+
+  // Default: Role.USER (Patient)
+  return {
+    ...userData,
+    patient: patient || null,
+  };
+};
+
 const getMyProfile = async (authUser: IRequestUser) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -34,9 +59,7 @@ const getMyProfile = async (authUser: IRequestUser) => {
     throw new AppError(httpStatus.NOT_FOUND, "User not found or deleted");
   }
 
-  // Remove password from response
-  const { password: _, ...userData } = user;
-  return userData;
+  return formatUserResponse(user);
 };
 
 const updateMyProfile = async (
@@ -169,8 +192,7 @@ const updateMyProfile = async (
     );
   }
 
-  const { password: _, ...userData } = result;
-  return userData;
+  return formatUserResponse(result);
 };
 
 const getAllUsers = async (filters: IUserFilterRequest) => {
@@ -222,10 +244,7 @@ const getAllUsers = async (filters: IUserFilterRequest) => {
     }),
   ]);
 
-  const sanitizedUsers = users.map((u) => {
-    const { password: _, ...data } = u;
-    return data;
-  });
+  const sanitizedUsers = users.map((u) => formatUserResponse(u));
 
   const totalPages = Math.ceil(total / limit);
 
@@ -259,8 +278,7 @@ const getUserById = async (id: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  const { password: _, ...userData } = user;
-  return userData;
+  return formatUserResponse(user);
 };
 
 const updateUserStatus = async (
@@ -280,10 +298,14 @@ const updateUserStatus = async (
     data: {
       status: payload.status,
     },
+    include: {
+      patient: true,
+      driver: true,
+      admin: true,
+    },
   });
 
-  const { password: _, ...userData } = updatedUser;
-  return userData;
+  return formatUserResponse(updatedUser);
 };
 
 const deleteUser = async (id: string) => {
@@ -340,6 +362,13 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
     throw new AppError(httpStatus.NOT_FOUND, "User not found or deleted");
   }
 
+  if (user.role !== Role.USER) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Only patients / standard users can access patient dashboard overview",
+    );
+  }
+
   // Ensure patient profile exists
   let patient = user.patient;
   if (!patient) {
@@ -389,11 +418,11 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
         vehicle: {
           select: {
             ambulanceType: true,
-            registrationNumber: true,
+            vehicleNumber: true,
             model: true,
             hasOxygen: true,
             hasVentilator: true,
-            hasLifeSupport: true,
+            hasDefibrillator: true,
           },
         },
       },
@@ -438,7 +467,7 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
       orderBy: { createdAt: "desc" },
       include: {
         driver: { select: { name: true, contactNumber: true, rating: true } },
-        vehicle: { select: { ambulanceType: true, registrationNumber: true } },
+        vehicle: { select: { ambulanceType: true, vehicleNumber: true } },
         invoice: {
           select: { id: true, totalAmount: true, paymentStatus: true },
         },

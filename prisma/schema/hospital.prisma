@@ -17,7 +17,7 @@ model Hospital {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  preAlerts HospitalPreAlert[]
+  preAlerts       HospitalPreAlert[]
 
   @@index([latitude, longitude], name: "idx_hospital_location")
   @@map("hospitals")
@@ -50,3 +50,4 @@ model HospitalPreAlert {
   @@index([trackingToken], name: "idx_prealert_tracking_token")
   @@map("hospital_pre_alerts")
 }
+

@@ -38,3 +38,4 @@ export const HospitalValidation = {
   createPreAlertSchema,
   acknowledgeAlertSchema,
 };
+

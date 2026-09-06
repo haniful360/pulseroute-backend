@@ -128,17 +128,21 @@ const calculateFareEstimate = async (
   const distanceFare = Number(
     (payload.distanceKm * Number(config.perKmRate)).toFixed(2),
   );
-  const durationMins = payload.estimatedDurationMins || 0;
+  const durationMins =
+    payload.estimatedDurationMins && payload.estimatedDurationMins > 0
+      ? payload.estimatedDurationMins
+      : Math.max(Math.ceil(payload.distanceKm * 2.5), 10);
+
   const durationFare = Number(
     (durationMins * Number(config.perMinuteRate)).toFixed(2),
   );
 
   const subtotal = Number((baseFare + distanceFare + durationFare).toFixed(2));
 
-  // Multipliers
   const nightMultiplier = isNight ? config.nightSurgeMultiplier : 1.0;
+  const severity = payload.emergencySeverity || EmergencySeverity.HIGH;
   const emergencyMultiplier =
-    payload.emergencySeverity === EmergencySeverity.CRITICAL
+    severity === EmergencySeverity.CRITICAL
       ? config.emergencySurgeMultiplier
       : 1.0;
 
@@ -153,33 +157,18 @@ const calculateFareEstimate = async (
     Math.max(calculatedFare, minFare).toFixed(2),
   );
 
-  // Platform commission and driver net estimation
-  const commissionRate = config.platformCommissionRate;
-  const estimatedCommission = Number(
-    (finalEstimatedFare * commissionRate).toFixed(2),
-  );
-  const estimatedDriverNet = Number(
-    (finalEstimatedFare - estimatedCommission).toFixed(2),
-  );
-
   return {
     ambulanceType: payload.ambulanceType,
     distanceKm: payload.distanceKm,
     estimatedDurationMins: durationMins,
+    emergencySeverity: severity,
     baseFare,
     distanceFare,
     durationFare,
-    subtotal,
-    nightSurgeMultiplier: nightMultiplier,
-    emergencySurgeMultiplier: emergencyMultiplier,
+    surgeMultiplier: totalSurgeMultiplier,
     totalSurgeMultiplier,
-    calculatedFare,
-    minFare,
     finalEstimatedFare,
     currency: "BDT",
-    platformCommissionRate: commissionRate,
-    estimatedCommission,
-    estimatedDriverNet,
   };
 };
 

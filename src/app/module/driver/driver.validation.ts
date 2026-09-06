@@ -23,12 +23,7 @@ const updateLocationSchema = z.object({
     .max(360, "Heading must be <= 360")
     .optional(),
   speed: z.number().min(0, "Speed cannot be negative").optional(),
-});
-
-const setActiveVehicleSchema = z.object({
-  vehicleId: z
-    .string({ message: "Vehicle ID is required" })
-    .uuid("Invalid Vehicle ID format"),
+  vehicleId: z.string().uuid("Invalid Vehicle ID format").optional(),
 });
 
 const verifyDriverSchema = z.object({
@@ -38,12 +33,11 @@ const verifyDriverSchema = z.object({
     DriverVerificationStatus.SUSPENDED,
     DriverVerificationStatus.PENDING,
   ]),
-  rejectionReason: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 export const DriverValidation = {
   updateDutyStatusSchema,
   updateLocationSchema,
-  setActiveVehicleSchema,
   verifyDriverSchema,
 };

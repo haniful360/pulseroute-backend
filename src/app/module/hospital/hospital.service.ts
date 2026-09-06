@@ -97,7 +97,7 @@ const getHospitalById = async (id: string) => {
 // 3. Dispatch Hospital Emergency Pre-Alert (Driver / Patient / Admin)
 const sendPreAlert = async (
   authUser: IRequestUser,
-  payload: ICreatePreAlertPayload,
+  payload: ICreatePreAlertPayload
 ) => {
   const [trip, hospital] = await Promise.all([
     prisma.trip.findUnique({
@@ -128,7 +128,7 @@ const sendPreAlert = async (
   if (!isPatient && !isDriver && !isAdmin) {
     throw new AppError(
       httpStatus.FORBIDDEN,
-      "You are not authorized to dispatch pre-alerts for this trip",
+      "You are not authorized to dispatch pre-alerts for this trip"
     );
   }
 
@@ -150,9 +150,7 @@ const sendPreAlert = async (
       vitalsSummary: payload.vitalsSummary || undefined,
       estimatedArrivalMins:
         payload.estimatedArrivalMins ||
-        (trip.estimatedDurationMins
-          ? Math.round(trip.estimatedDurationMins)
-          : 10),
+        (trip.estimatedDurationMins ? Math.round(trip.estimatedDurationMins) : 10),
       status: AlertStatus.ALERTED,
     },
     include: {
@@ -199,11 +197,7 @@ const sendPreAlert = async (
       message: `${hospital.name} Emergency Room has been alerted with your patient vitals. ER trauma team is standing by!`,
       type: NotificationType.TRIP,
       link: `/trips/${trip.id}`,
-      metadata: {
-        tripId: trip.id,
-        hospitalId: hospital.id,
-        preAlertId: preAlert.id,
-      },
+      metadata: { tripId: trip.id, hospitalId: hospital.id, preAlertId: preAlert.id },
     });
   } catch {
     // Non-blocking notification
@@ -259,10 +253,7 @@ const getPublicAlertByToken = async (token: string) => {
   });
 
   if (!preAlert) {
-    throw new AppError(
-      httpStatus.NOT_FOUND,
-      "Hospital pre-alert not found or invalid token",
-    );
+    throw new AppError(httpStatus.NOT_FOUND, "Hospital pre-alert not found or invalid token");
   }
 
   return preAlert;
@@ -271,7 +262,7 @@ const getPublicAlertByToken = async (token: string) => {
 // 5. Hospital Acknowledges & Prepares Trauma Bay (Doctor confirmation)
 const acknowledgeAlert = async (
   idOrToken: string,
-  payload: IAcknowledgeAlertPayload,
+  payload: IAcknowledgeAlertPayload
 ) => {
   const existingAlert = await prisma.hospitalPreAlert.findFirst({
     where: {
@@ -300,16 +291,14 @@ const acknowledgeAlert = async (
 
   // Real-time broadcast to the ambulance trip room (Driver & Patient)
   try {
-    getIO()
-      ?.to(`trip:${existingAlert.tripId}`)
-      .emit("hospital:bay-ready", {
-        preAlertId: existingAlert.id,
-        hospitalName: existingAlert.hospital.name,
-        assignedBayNumber: payload.assignedBayNumber,
-        acknowledgedBy: updatedAlert.acknowledgedBy,
-        notes: payload.notes,
-        message: `${existingAlert.hospital.name} ER has prepared ${payload.assignedBayNumber}! Proceed directly to the trauma entrance.`,
-      });
+    getIO()?.to(`trip:${existingAlert.tripId}`).emit("hospital:bay-ready", {
+      preAlertId: existingAlert.id,
+      hospitalName: existingAlert.hospital.name,
+      assignedBayNumber: payload.assignedBayNumber,
+      acknowledgedBy: updatedAlert.acknowledgedBy,
+      notes: payload.notes,
+      message: `${existingAlert.hospital.name} ER has prepared ${payload.assignedBayNumber}! Proceed directly to the trauma entrance.`,
+    });
   } catch {
     // Non-blocking socket emission
   }
@@ -323,11 +312,7 @@ const getHospitalActiveAlerts = async (hospitalId: string) => {
     where: {
       hospitalId,
       status: {
-        in: [
-          AlertStatus.ALERTED,
-          AlertStatus.ACKNOWLEDGED,
-          AlertStatus.PREPARING_BAY,
-        ],
+        in: [AlertStatus.ALERTED, AlertStatus.ACKNOWLEDGED, AlertStatus.PREPARING_BAY],
       },
     },
     orderBy: { createdAt: "desc" },
@@ -358,3 +343,4 @@ export const HospitalService = {
   acknowledgeAlert,
   getHospitalActiveAlerts,
 };
+

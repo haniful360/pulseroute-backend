@@ -43,17 +43,12 @@ export const driverSchemas = {
         example: 45.0,
         description: "Current travel speed in km/h",
       },
-    },
-  },
-  SetActiveVehicleRequest: {
-    type: "object",
-    required: ["vehicleId"],
-    properties: {
       vehicleId: {
         type: "string",
         format: "uuid",
         example: "a8e1b369-e37d-4b82-9657-36e3981881f2",
-        description: "ID of the vehicle owned by the driver to set as active",
+        description:
+          "Optional. Set or update current active vehicle along with location",
       },
     },
   },
@@ -67,10 +62,10 @@ export const driverSchemas = {
         example: "APPROVED",
         description: "Driver verification decision",
       },
-      rejectionReason: {
+      reason: {
         type: "string",
-        example: "License copy was expired or unreadable",
-        description: "Reason provided if driver is rejected or suspended",
+        example: "License copy was verified and background check completed",
+        description: "Reason or remarks for verification decision",
       },
     },
   },
@@ -281,41 +276,6 @@ export const driverPaths = {
         },
         400: {
           description: "Invalid coordinates provided",
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/StandardErrorResponse" },
-            },
-          },
-        },
-      },
-    },
-  },
-  "/api/v1/drivers/active-vehicle": {
-    patch: {
-      tags: ["Driver Operations"],
-      summary: "Set Current Active Vehicle",
-      description:
-        "Sets which ambulance the driver is currently operating from among their owned vehicles.",
-      security: [{ bearerAuth: [] }],
-      requestBody: {
-        required: true,
-        content: {
-          "application/json": {
-            schema: { $ref: "#/components/schemas/SetActiveVehicleRequest" },
-          },
-        },
-      },
-      responses: {
-        200: {
-          description: "Active vehicle updated successfully",
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/DriverProfileResponse" },
-            },
-          },
-        },
-        404: {
-          description: "Vehicle not found or does not belong to driver",
           content: {
             "application/json": {
               schema: { $ref: "#/components/schemas/StandardErrorResponse" },
