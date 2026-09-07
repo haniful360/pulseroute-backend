@@ -3,16 +3,9 @@ node_modules
 .env.*
 !.env.example
 dist
-
+.vercel
 /src/generated
 
-# Lock Files
-pnpm-lock.yaml
-yarn.lock
-package-lock.json
-pnpm-workspace.yaml
-branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
-.gitignore
-.vercel
+branch_structure.json

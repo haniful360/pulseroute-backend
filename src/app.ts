@@ -69,7 +69,10 @@ app.use(cookieParser());
 // Interactive Swagger API Documentation (CDN Standalone + Fallback)
 app.get("/api-docs.json", (_req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
   res.status(httpStatus.OK).json(swaggerDocument);
@@ -77,7 +80,10 @@ app.get("/api-docs.json", (_req: Request, res: Response) => {
 
 app.get(["/api-docs", "/api-docs/"], (_req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
   res.status(httpStatus.OK).send(getSwaggerHtml());
