@@ -12,6 +12,20 @@ export const vehicleSchemas = {
         type: "string",
         example: "DHAKA-METRO-CHA-11-2233",
       },
+      photoUrl: {
+        type: "string",
+        example: "https://res.cloudinary.com/demo/image/upload/ambulance.jpg",
+        description: "Primary ambulance photo URL",
+      },
+      photos: {
+        type: "array",
+        items: { type: "string" },
+        example: [
+          "https://res.cloudinary.com/demo/image/upload/ambulance_front.jpg",
+          "https://res.cloudinary.com/demo/image/upload/ambulance_inside.jpg",
+        ],
+        description: "Multiple ambulance photos",
+      },
       model: {
         type: "string",
         example: "HiAce High Roof Ambulance",
@@ -87,6 +101,20 @@ export const vehicleSchemas = {
         properties: {
           id: { type: "string" },
           vehicleNumber: { type: "string", example: "DHAKA-METRO-CHA-11-2233" },
+          photoUrl: {
+            type: "string",
+            nullable: true,
+            example:
+              "https://res.cloudinary.com/demo/image/upload/ambulance.jpg",
+          },
+          photos: {
+            type: "array",
+            items: { type: "string" },
+            example: [
+              "https://res.cloudinary.com/demo/image/upload/ambulance_front.jpg",
+              "https://res.cloudinary.com/demo/image/upload/ambulance_inside.jpg",
+            ],
+          },
           ambulanceType: { type: "string", example: "ICU" },
           model: { type: "string", example: "HiAce High Roof" },
           verificationStatus: { type: "string", example: "APPROVED" },

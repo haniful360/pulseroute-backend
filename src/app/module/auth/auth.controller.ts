@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
+import { uploadToCloudinary } from "../../lib/cloudinary";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "./auth.interface";
@@ -12,7 +13,26 @@ const cookieOptions = {
 };
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
-  const payload = req.body;
+  let payload = req.body;
+  if (typeof req.body.data === "string") {
+    try {
+      payload = JSON.parse(req.body.data);
+    } catch {
+      // Use req.body as is
+    }
+  }
+
+  // Handle uploaded avatar if present
+  const files = req.files as
+    | { [fieldname: string]: Express.Multer.File[] }
+    | undefined;
+  if (files?.avatar?.[0]) {
+    payload.avatarUrl = await uploadToCloudinary(
+      files.avatar[0].buffer,
+      "pulseroute/avatars",
+    );
+  }
+
   const result = await AuthService.registerUser(payload);
 
   sendResponse(res, {
@@ -25,7 +45,122 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const registerDriver = catchAsync(async (req: Request, res: Response) => {
-  const payload = req.body;
+  let payload = req.body;
+  if (typeof req.body.data === "string") {
+    try {
+      payload = JSON.parse(req.body.data);
+    } catch {
+      // Use req.body as is
+    }
+  }
+
+  // Parse stringified types from multipart/form-data
+  if (payload.experienceYears && typeof payload.experienceYears === "string") {
+    payload.experienceYears = Number(payload.experienceYears);
+  }
+  if (payload.year && typeof payload.year === "string") {
+    payload.year = Number(payload.year);
+  }
+  if (typeof payload.hasOxygen === "string") {
+    payload.hasOxygen = payload.hasOxygen === "true";
+  }
+  if (typeof payload.hasVentilator === "string") {
+    payload.hasVentilator = payload.hasVentilator === "true";
+  }
+  if (typeof payload.hasDefibrillator === "string") {
+    payload.hasDefibrillator = payload.hasDefibrillator === "true";
+  }
+  if (typeof payload.hasSuctionMachine === "string") {
+    payload.hasSuctionMachine = payload.hasSuctionMachine === "true";
+  }
+
+  // Parse stringified arrays if provided
+  if (typeof payload.licensePhotos === "string") {
+    try {
+      payload.licensePhotos = JSON.parse(payload.licensePhotos);
+    } catch {
+      payload.licensePhotos = [payload.licensePhotos];
+    }
+  }
+  if (typeof payload.vehiclePhotos === "string") {
+    try {
+      payload.vehiclePhotos = JSON.parse(payload.vehiclePhotos);
+    } catch {
+      payload.vehiclePhotos = [payload.vehiclePhotos];
+    }
+  }
+  if (typeof payload.nidPhotos === "string") {
+    try {
+      payload.nidPhotos = JSON.parse(payload.nidPhotos);
+    } catch {
+      payload.nidPhotos = [payload.nidPhotos];
+    }
+  }
+
+  // Handle uploaded files (supports single and multiple file uploads)
+  const files = req.files as
+    | { [fieldname: string]: Express.Multer.File[] }
+    | undefined;
+
+  // 1. License photos
+  const licenseFiles = [
+    ...(files?.licensePhotos || []),
+    ...(files?.licensePhoto || []),
+  ];
+  if (licenseFiles.length > 0) {
+    const uploadedLicenseUrls = await Promise.all(
+      licenseFiles.map((file) =>
+        uploadToCloudinary(file.buffer, "pulseroute/drivers/licenses"),
+      ),
+    );
+    payload.licensePhotos = [
+      ...(Array.isArray(payload.licensePhotos) ? payload.licensePhotos : []),
+      ...uploadedLicenseUrls,
+    ];
+    payload.licensePhotoUrl = payload.licensePhotos[0];
+  }
+
+  // 2. Vehicle photos
+  const vehicleFiles = [
+    ...(files?.vehiclePhotos || []),
+    ...(files?.vehiclePhoto || []),
+  ];
+  if (vehicleFiles.length > 0) {
+    const uploadedVehicleUrls = await Promise.all(
+      vehicleFiles.map((file) =>
+        uploadToCloudinary(file.buffer, "pulseroute/vehicles"),
+      ),
+    );
+    payload.vehiclePhotos = [
+      ...(Array.isArray(payload.vehiclePhotos) ? payload.vehiclePhotos : []),
+      ...uploadedVehicleUrls,
+    ];
+    payload.vehiclePhotoUrl = payload.vehiclePhotos[0];
+  }
+
+  // 3. NID photos
+  const nidFiles = [...(files?.nidPhotos || []), ...(files?.nidPhoto || [])];
+  if (nidFiles.length > 0) {
+    const uploadedNidUrls = await Promise.all(
+      nidFiles.map((file) =>
+        uploadToCloudinary(file.buffer, "pulseroute/drivers/nid"),
+      ),
+    );
+    payload.nidPhotos = [
+      ...(Array.isArray(payload.nidPhotos) ? payload.nidPhotos : []),
+      ...uploadedNidUrls,
+    ];
+    payload.nidPhotoUrl = payload.nidPhotos[0];
+  }
+
+  // 4. Avatar
+  if (files?.avatar?.[0]) {
+    payload.avatarUrl = await uploadToCloudinary(
+      files.avatar[0].buffer,
+      "pulseroute/avatars",
+    );
+  }
+
   const result = await AuthService.registerDriver(payload);
 
   sendResponse(res, {

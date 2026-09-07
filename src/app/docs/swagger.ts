@@ -123,8 +123,49 @@ export const swaggerDocument = {
             example: "2028-12-31",
           },
           nidNumber: { type: "string", example: "19901234567890123" },
+          nidPhotoUrl: {
+            type: "string",
+            example: "https://res.cloudinary.com/demo/image/upload/nid.jpg",
+          },
+          nidPhotos: {
+            type: "array",
+            items: { type: "string" },
+            example: [
+              "https://res.cloudinary.com/demo/image/upload/nid_front.jpg",
+              "https://res.cloudinary.com/demo/image/upload/nid_back.jpg",
+            ],
+          },
+          licensePhotoUrl: {
+            type: "string",
+            example: "https://res.cloudinary.com/demo/image/upload/license.jpg",
+          },
+          licensePhotos: {
+            type: "array",
+            items: { type: "string" },
+            example: [
+              "https://res.cloudinary.com/demo/image/upload/license_front.jpg",
+              "https://res.cloudinary.com/demo/image/upload/license_back.jpg",
+            ],
+          },
+          avatarUrl: {
+            type: "string",
+            example: "https://res.cloudinary.com/demo/image/upload/avatar.jpg",
+          },
           experienceYears: { type: "integer", example: 5 },
           vehicleNumber: { type: "string", example: "DHAKA-METRO-CHA-11-2233" },
+          vehiclePhotoUrl: {
+            type: "string",
+            example:
+              "https://res.cloudinary.com/demo/image/upload/ambulance.jpg",
+          },
+          vehiclePhotos: {
+            type: "array",
+            items: { type: "string" },
+            example: [
+              "https://res.cloudinary.com/demo/image/upload/ambulance_front.jpg",
+              "https://res.cloudinary.com/demo/image/upload/ambulance_inside.jpg",
+            ],
+          },
           ambulanceType: {
             type: "string",
             enum: ["AC", "NON_AC", "ICU", "FREEZER", "NEONATAL", "BASIC"],
@@ -323,6 +364,58 @@ export const swaggerDocument = {
         requestBody: {
           required: true,
           content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["name", "email", "password"],
+                properties: {
+                  name: { type: "string", example: "Rahim Ahmed" },
+                  email: {
+                    type: "string",
+                    format: "email",
+                    example: "rahim@example.com",
+                  },
+                  password: {
+                    type: "string",
+                    format: "password",
+                    example: "password123",
+                  },
+                  avatar: {
+                    type: "string",
+                    format: "binary",
+                    description: "Profile photo image file",
+                  },
+                  contactNumber: { type: "string", example: "+8801711223344" },
+                  address: {
+                    type: "string",
+                    example: "House 12, Road 5, Dhanmondi, Dhaka",
+                  },
+                  emergencyContactName: {
+                    type: "string",
+                    example: "Karim Ahmed",
+                  },
+                  emergencyContactNumber: {
+                    type: "string",
+                    example: "+8801711223355",
+                  },
+                  bloodGroup: { type: "string", example: "O+" },
+                  gender: {
+                    type: "string",
+                    enum: ["MALE", "FEMALE", "OTHER"],
+                    example: "MALE",
+                  },
+                  dateOfBirth: {
+                    type: "string",
+                    format: "date",
+                    example: "1995-05-15",
+                  },
+                  medicalHistory: {
+                    type: "string",
+                    example: "Asthma, allergic to penicillin",
+                  },
+                },
+              },
+            },
             "application/json": {
               schema: { $ref: "#/components/schemas/RegisterUserRequest" },
             },
@@ -359,6 +452,96 @@ export const swaggerDocument = {
         requestBody: {
           required: true,
           content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: [
+                  "name",
+                  "email",
+                  "password",
+                  "contactNumber",
+                  "licenseNumber",
+                ],
+                properties: {
+                  name: { type: "string", example: "Kamal Hossain" },
+                  email: {
+                    type: "string",
+                    format: "email",
+                    example: "kamal.driver@example.com",
+                  },
+                  password: {
+                    type: "string",
+                    format: "password",
+                    example: "password123",
+                  },
+                  contactNumber: { type: "string", example: "+8801811223344" },
+                  licenseNumber: {
+                    type: "string",
+                    example: "DL-DHAKA-2024-9988",
+                  },
+                  licenseExpiry: {
+                    type: "string",
+                    format: "date",
+                    example: "2028-12-31",
+                  },
+                  licensePhotos: {
+                    type: "array",
+                    items: { type: "string", format: "binary" },
+                    description:
+                      "Driver's license photos / scanned copies (supports multiple files)",
+                  },
+                  nidNumber: { type: "string", example: "19901234567890123" },
+                  nidPhotos: {
+                    type: "array",
+                    items: { type: "string", format: "binary" },
+                    description: "NID Card photos (front & back images)",
+                  },
+                  avatar: {
+                    type: "string",
+                    format: "binary",
+                    description: "Driver profile portrait image file",
+                  },
+                  experienceYears: { type: "integer", example: 5 },
+                  vehicleNumber: {
+                    type: "string",
+                    example: "DHAKA-METRO-CHA-11-2233",
+                  },
+                  vehiclePhotos: {
+                    type: "array",
+                    items: { type: "string", format: "binary" },
+                    description:
+                      "Ambulance exterior / interior photos (supports multiple images)",
+                  },
+                  ambulanceType: {
+                    type: "string",
+                    enum: [
+                      "AC",
+                      "NON_AC",
+                      "ICU",
+                      "FREEZER",
+                      "NEONATAL",
+                      "BASIC",
+                    ],
+                    example: "ICU",
+                  },
+                  model: {
+                    type: "string",
+                    example: "Toyota HiAce Grandia Ambulance",
+                  },
+                  manufacturer: { type: "string", example: "Toyota" },
+                  year: { type: "integer", example: 2022 },
+                  hasOxygen: { type: "boolean", example: true },
+                  hasVentilator: { type: "boolean", example: true },
+                  hasDefibrillator: { type: "boolean", example: true },
+                  hasSuctionMachine: { type: "boolean", example: true },
+                  equipmentDetails: {
+                    type: "string",
+                    example:
+                      "Portable ICU ventilator, defibrillator, high-flow oxygen",
+                  },
+                },
+              },
+            },
             "application/json": {
               schema: { $ref: "#/components/schemas/RegisterDriverRequest" },
             },

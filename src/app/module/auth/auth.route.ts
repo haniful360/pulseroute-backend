@@ -1,14 +1,34 @@
 import { Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
+import { upload } from "../../lib/multer";
 import { auth } from "../../middleware/checkAuth";
 import { authLimiter } from "../../middleware/rateLimiter";
 import { AuthController } from "./auth.controller";
 
 const router = Router();
 
-// Public registration & OTP verification routes (protected by authLimiter)
-router.post("/register", authLimiter, AuthController.registerUser);
-router.post("/register-driver", authLimiter, AuthController.registerDriver);
+// Public registration & OTP verification routes (protected by authLimiter & supporting multipart file uploads)
+router.post(
+  "/register",
+  authLimiter,
+  upload.fields([{ name: "avatar", maxCount: 1 }]),
+  AuthController.registerUser,
+);
+
+router.post(
+  "/register-driver",
+  authLimiter,
+  upload.fields([
+    { name: "licensePhoto", maxCount: 5 },
+    { name: "licensePhotos", maxCount: 5 },
+    { name: "vehiclePhoto", maxCount: 10 },
+    { name: "vehiclePhotos", maxCount: 10 },
+    { name: "nidPhoto", maxCount: 5 },
+    { name: "nidPhotos", maxCount: 5 },
+    { name: "avatar", maxCount: 1 },
+  ]),
+  AuthController.registerDriver,
+);
 router.post("/verify-otp", authLimiter, AuthController.verifyOtp);
 router.post("/verify-user-otp", authLimiter, AuthController.verifyOtp);
 router.post("/resend-otp", authLimiter, AuthController.resendOtp);

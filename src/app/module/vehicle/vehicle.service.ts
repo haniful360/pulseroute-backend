@@ -40,6 +40,12 @@ const createVehicle = async (
         driverId: driver.id,
         ambulanceType: payload.ambulanceType,
         vehicleNumber: payload.vehicleNumber,
+        photoUrl: payload.photoUrl || (payload.photos?.[0] ?? undefined),
+        photos: Array.isArray(payload.photos)
+          ? payload.photos
+          : payload.photoUrl
+            ? [payload.photoUrl]
+            : [],
         model: payload.model,
         manufacturer: payload.manufacturer,
         year: payload.year,
@@ -119,6 +125,16 @@ const updateVehicle = async (
   const updatedVehicle = await prisma.vehicle.update({
     where: { id: vehicleId },
     data: {
+      photoUrl:
+        payload.photoUrl !== undefined ? payload.photoUrl : payload.photos?.[0],
+      photos:
+        payload.photos !== undefined
+          ? Array.isArray(payload.photos)
+            ? payload.photos
+            : [payload.photos]
+          : payload.photoUrl
+            ? [payload.photoUrl]
+            : undefined,
       model: payload.model,
       manufacturer: payload.manufacturer,
       year: payload.year,

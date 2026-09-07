@@ -12,6 +12,7 @@ export interface IRegisterUserPayload {
   gender?: Gender;
   dateOfBirth?: string | Date;
   medicalHistory?: string;
+  avatarUrl?: string;
 }
 
 export interface IRegisterDriverPayload {
@@ -21,12 +22,19 @@ export interface IRegisterDriverPayload {
   contactNumber: string;
   licenseNumber: string;
   licenseExpiry?: string | Date;
+  licensePhotoUrl?: string;
+  licensePhotos?: string[];
   nidNumber?: string;
+  nidPhotoUrl?: string;
+  nidPhotos?: string[];
+  avatarUrl?: string;
   experienceYears?: number;
 
   // Ambulance / Vehicle information
   vehicleNumber?: string;
   ambulanceType?: AmbulanceType;
+  vehiclePhotoUrl?: string;
+  vehiclePhotos?: string[];
   model?: string;
   manufacturer?: string;
   year?: number;

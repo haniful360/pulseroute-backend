@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
+import { uploadToCloudinary } from "../../lib/cloudinary";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "../auth/auth.interface";
@@ -33,7 +34,25 @@ const getUserDashboardOverview = catchAsync(
 
 const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
-  const result = await UserService.updateMyProfile(user, req.body);
+  let payload = req.body;
+
+  if (typeof req.body.data === "string") {
+    try {
+      payload = JSON.parse(req.body.data);
+    } catch {
+      // Use req.body as is
+    }
+  }
+
+  // Handle avatar upload if present
+  if (req.file) {
+    payload.avatarUrl = await uploadToCloudinary(
+      req.file.buffer,
+      "pulseroute/avatars",
+    );
+  }
+
+  const result = await UserService.updateMyProfile(user, payload);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

@@ -5,7 +5,11 @@ model Driver {
   contactNumber      String
   licenseNumber      String                   @unique
   licenseExpiry      DateTime?
+  licensePhotoUrl    String?
+  licensePhotos      String[]                 @default([])
   nidNumber          String?
+  nidPhotoUrl        String?
+  nidPhotos          String[]                 @default([])
   experienceYears    Int                      @default(0)
   verificationStatus DriverVerificationStatus @default(PENDING)
   verifiedAt         DateTime?

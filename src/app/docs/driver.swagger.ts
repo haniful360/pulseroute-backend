@@ -86,6 +86,32 @@ export const driverSchemas = {
           email: { type: "string", example: "kamal.driver@example.com" },
           contactNumber: { type: "string", example: "+8801811223344" },
           licenseNumber: { type: "string", example: "DL-DHAKA-2024-9988" },
+          licensePhotoUrl: {
+            type: "string",
+            nullable: true,
+            example: "https://res.cloudinary.com/demo/image/upload/license.jpg",
+          },
+          licensePhotos: {
+            type: "array",
+            items: { type: "string" },
+            example: [
+              "https://res.cloudinary.com/demo/image/upload/license_front.jpg",
+              "https://res.cloudinary.com/demo/image/upload/license_back.jpg",
+            ],
+          },
+          nidPhotoUrl: {
+            type: "string",
+            nullable: true,
+            example: "https://res.cloudinary.com/demo/image/upload/nid.jpg",
+          },
+          nidPhotos: {
+            type: "array",
+            items: { type: "string" },
+            example: [
+              "https://res.cloudinary.com/demo/image/upload/nid_front.jpg",
+              "https://res.cloudinary.com/demo/image/upload/nid_back.jpg",
+            ],
+          },
           experienceYears: { type: "integer", example: 5 },
           verificationStatus: { type: "string", example: "APPROVED" },
           dutyStatus: { type: "string", example: "ONLINE" },

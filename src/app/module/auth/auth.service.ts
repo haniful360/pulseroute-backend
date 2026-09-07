@@ -332,6 +332,7 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
         phone: userData.contactNumber,
         role: Role.USER,
         status: UserStatus.ACTIVE,
+        avatarUrl: userData.avatarUrl || undefined,
         emailVerified: true,
         patient: {
           create: {
@@ -424,6 +425,7 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
           email: driverData.email,
           password: driverData.password,
           phone: driverData.contactNumber,
+          avatarUrl: driverData.avatarUrl || undefined,
           role: Role.DRIVER,
           status: UserStatus.ACTIVE,
           emailVerified: true,
@@ -441,7 +443,22 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
           licenseExpiry: driverData.licenseExpiry
             ? new Date(driverData.licenseExpiry)
             : undefined,
+          licensePhotoUrl:
+            driverData.licensePhotoUrl ||
+            (driverData.licensePhotos?.[0] ?? undefined),
+          licensePhotos: Array.isArray(driverData.licensePhotos)
+            ? driverData.licensePhotos
+            : driverData.licensePhotoUrl
+              ? [driverData.licensePhotoUrl]
+              : [],
           nidNumber: driverData.nidNumber,
+          nidPhotoUrl:
+            driverData.nidPhotoUrl || (driverData.nidPhotos?.[0] ?? undefined),
+          nidPhotos: Array.isArray(driverData.nidPhotos)
+            ? driverData.nidPhotos
+            : driverData.nidPhotoUrl
+              ? [driverData.nidPhotoUrl]
+              : [],
           experienceYears: driverData.experienceYears || 0,
           verificationStatus: DriverVerificationStatus.PENDING,
           dutyStatus: DutyStatus.OFFLINE,
@@ -463,6 +480,14 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
             driverId: driver.id,
             vehicleNumber: driverData.vehicleNumber,
             ambulanceType: driverData.ambulanceType as AmbulanceType,
+            photoUrl:
+              driverData.vehiclePhotoUrl ||
+              (driverData.vehiclePhotos?.[0] ?? undefined),
+            photos: Array.isArray(driverData.vehiclePhotos)
+              ? driverData.vehiclePhotos
+              : driverData.vehiclePhotoUrl
+                ? [driverData.vehiclePhotoUrl]
+                : [],
             model: driverData.model,
             manufacturer: driverData.manufacturer,
             year: driverData.year ? Number(driverData.year) : undefined,

@@ -5,6 +5,8 @@ model Vehicle {
   activeDriver       Driver?                   @relation("CurrentDriverVehicle")
   ambulanceType      AmbulanceType
   vehicleNumber      String                    @unique
+  photoUrl           String?
+  photos             String[]                  @default([])
   model              String?
   manufacturer       String?
   year               Int?

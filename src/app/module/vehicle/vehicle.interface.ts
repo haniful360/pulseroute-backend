@@ -6,6 +6,8 @@ import {
 export interface ICreateVehiclePayload {
   ambulanceType: AmbulanceType;
   vehicleNumber: string;
+  photoUrl?: string;
+  photos?: string[];
   model?: string;
   manufacturer?: string;
   year?: number;
@@ -17,6 +19,8 @@ export interface ICreateVehiclePayload {
 }
 
 export interface IUpdateVehiclePayload {
+  photoUrl?: string;
+  photos?: string[];
   model?: string;
   manufacturer?: string;
   year?: number;

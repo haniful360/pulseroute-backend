@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
+import { upload } from "../../lib/multer";
 import { auth } from "../../middleware/checkAuth";
 import { UserController } from "./user.controller";
 
@@ -22,6 +23,7 @@ router.get(
 router.patch(
   "/profile",
   auth(Role.SUPER_ADMIN, Role.DRIVER, Role.USER),
+  upload.single("avatar"),
   UserController.updateMyProfile,
 );
 
