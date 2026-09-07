@@ -8,7 +8,6 @@ export interface IUpdateProfilePayload {
 
   // Patient profile fields
   address?: string;
-  emergencyContactName?: string;
   emergencyContactNumber?: string;
   bloodGroup?: string;
   gender?: Gender;

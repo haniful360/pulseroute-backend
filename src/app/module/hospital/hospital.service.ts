@@ -231,7 +231,6 @@ const getPublicAlertByToken = async (token: string) => {
               gender: true,
               bloodGroup: true,
               contactNumber: true,
-              emergencyContactName: true,
               emergencyContactNumber: true,
               medicalHistory: true,
             },

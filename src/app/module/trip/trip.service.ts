@@ -349,7 +349,6 @@ const acceptDispatchOffer = async (authUser: IRequestUser, offerId: string) => {
           select: {
             name: true,
             contactNumber: true,
-            emergencyContactName: true,
             emergencyContactNumber: true,
             bloodGroup: true,
             medicalHistory: true,

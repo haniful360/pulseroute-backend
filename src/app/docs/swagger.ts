@@ -77,7 +77,6 @@ export const swaggerDocument = {
             type: "string",
             example: "House 12, Road 5, Dhanmondi, Dhaka",
           },
-          emergencyContactName: { type: "string", example: "Karim Ahmed" },
           emergencyContactNumber: {
             type: "string",
             example: "+8801711223355",
@@ -394,10 +393,6 @@ export const swaggerDocument = {
                   address: {
                     type: "string",
                     example: "House 12, Road 5, Dhanmondi, Dhaka",
-                  },
-                  emergencyContactName: {
-                    type: "string",
-                    example: "Karim Ahmed",
                   },
                   emergencyContactNumber: {
                     type: "string",

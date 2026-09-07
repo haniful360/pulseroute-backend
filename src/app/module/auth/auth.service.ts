@@ -340,7 +340,6 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
             email: userData.email,
             contactNumber: userData.contactNumber,
             address: userData.address,
-            emergencyContactName: userData.emergencyContactName,
             emergencyContactNumber: userData.emergencyContactNumber,
             bloodGroup: userData.bloodGroup,
             gender: userData.gender,

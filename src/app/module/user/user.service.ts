@@ -102,7 +102,6 @@ const updateMyProfile = async (
           name: payload.name ?? undefined,
           contactNumber: payload.phone ?? payload.contactNumber ?? undefined,
           address: payload.address ?? undefined,
-          emergencyContactName: payload.emergencyContactName ?? undefined,
           emergencyContactNumber: payload.emergencyContactNumber ?? undefined,
           bloodGroup: payload.bloodGroup ?? undefined,
           gender: payload.gender ?? undefined,
@@ -118,7 +117,6 @@ const updateMyProfile = async (
           email: user.email,
           contactNumber: payload.phone ?? payload.contactNumber,
           address: payload.address,
-          emergencyContactName: payload.emergencyContactName,
           emergencyContactNumber: payload.emergencyContactNumber,
           bloodGroup: payload.bloodGroup,
           gender: payload.gender,
@@ -480,8 +478,7 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
   if (patient.bloodGroup) completenessScore += 20;
   if (patient.contactNumber) completenessScore += 20;
   if (patient.address) completenessScore += 20;
-  if (patient.emergencyContactName && patient.emergencyContactNumber)
-    completenessScore += 20;
+  if (patient.emergencyContactNumber) completenessScore += 20;
   if (patient.medicalHistory) completenessScore += 20;
 
   return {
@@ -497,7 +494,6 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
       contactNumber: patient.contactNumber,
       address: patient.address,
       gender: patient.gender,
-      emergencyContactName: patient.emergencyContactName,
       emergencyContactNumber: patient.emergencyContactNumber,
       medicalHistory: patient.medicalHistory,
       profileCompleteness: `${completenessScore}%`,

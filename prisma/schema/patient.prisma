@@ -4,7 +4,6 @@ model Patient {
   email                  String    @unique
   contactNumber          String?
   address                String?
-  emergencyContactName   String?
   emergencyContactNumber String?
   bloodGroup             String?
   gender                 Gender?

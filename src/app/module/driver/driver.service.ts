@@ -432,7 +432,6 @@ const getDriverDashboardOverview = async (authUser: IRequestUser) => {
             name: true,
             contactNumber: true,
             bloodGroup: true,
-            emergencyContactName: true,
             emergencyContactNumber: true,
           },
         },

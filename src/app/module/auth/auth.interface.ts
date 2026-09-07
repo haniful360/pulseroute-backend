@@ -6,7 +6,6 @@ export interface IRegisterUserPayload {
   password: string;
   contactNumber?: string;
   address?: string;
-  emergencyContactName?: string;
   emergencyContactNumber?: string;
   bloodGroup?: string;
   gender?: Gender;

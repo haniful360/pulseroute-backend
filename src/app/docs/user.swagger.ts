@@ -26,11 +26,6 @@ export const userSchemas = {
         example: "House 14, Road 7, Dhanmondi, Dhaka",
         description: "Residential or permanent address",
       },
-      emergencyContactName: {
-        type: "string",
-        example: "Karim Ahmed",
-        description: "Name of emergency contact person",
-      },
       emergencyContactNumber: {
         type: "string",
         example: "+8801711223355",
@@ -126,7 +121,6 @@ export const userSchemas = {
             properties: {
               id: { type: "string" },
               address: { type: "string" },
-              emergencyContactName: { type: "string" },
               emergencyContactNumber: { type: "string" },
               bloodGroup: { type: "string" },
               gender: { type: "string" },
