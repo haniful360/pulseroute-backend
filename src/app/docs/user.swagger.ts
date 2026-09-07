@@ -62,6 +62,12 @@ export const userSchemas = {
         example: "19901234567890123",
         description: "National Identification Number",
       },
+      licenseExpiry: {
+        type: "string",
+        format: "date",
+        example: "2028-12-31",
+        description: "Driving license expiration date",
+      },
       experienceYears: {
         type: "integer",
         example: 6,
@@ -241,6 +247,58 @@ export const userPaths = {
       requestBody: {
         required: true,
         content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                avatar: {
+                  type: "string",
+                  format: "binary",
+                  description: "Profile photo image file",
+                },
+                name: { type: "string", example: "Rahim Ahmed" },
+                phone: { type: "string", example: "+8801711223344" },
+                address: {
+                  type: "string",
+                  example: "House 14, Road 7, Dhanmondi, Dhaka",
+                },
+                emergencyContactNumber: {
+                  type: "string",
+                  example: "+8801711223355",
+                },
+                bloodGroup: { type: "string", example: "O+" },
+                gender: {
+                  type: "string",
+                  enum: ["MALE", "FEMALE", "OTHER"],
+                  example: "MALE",
+                },
+                dateOfBirth: {
+                  type: "string",
+                  format: "date",
+                  example: "1995-05-15",
+                },
+                medicalHistory: {
+                  type: "string",
+                  example: "Asthma, allergic to penicillin",
+                },
+                nidNumber: { type: "string", example: "19901234567890123" },
+                licenseExpiry: {
+                  type: "string",
+                  format: "date",
+                  example: "2028-12-31",
+                },
+                experienceYears: { type: "integer", example: 6 },
+                orgEmail: {
+                  type: "string",
+                  example: "admin@pulseroute.com",
+                },
+                department: {
+                  type: "string",
+                  example: "Emergency Dispatch",
+                },
+              },
+            },
+          },
           "application/json": {
             schema: { $ref: "#/components/schemas/UpdateProfileRequest" },
           },

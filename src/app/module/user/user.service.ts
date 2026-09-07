@@ -139,6 +139,9 @@ const updateMyProfile = async (
             name: payload.name ?? undefined,
             contactNumber: payload.phone ?? payload.contactNumber ?? undefined,
             nidNumber: payload.nidNumber ?? undefined,
+            licenseExpiry: payload.licenseExpiry
+              ? new Date(payload.licenseExpiry)
+              : undefined,
             experienceYears:
               payload.experienceYears !== undefined
                 ? Number(payload.experienceYears)

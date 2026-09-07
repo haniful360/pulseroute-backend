@@ -18,6 +18,7 @@ export interface IUpdateProfilePayload {
   // Driver profile fields
   contactNumber?: string;
   nidNumber?: string;
+  licenseExpiry?: string | Date;
   experienceYears?: number;
 
   // Admin profile fields
