@@ -1,9 +1,10 @@
 {
   "version": 2,
+  "buildCommand": "prisma generate",
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api"
+      "destination": "/api/index"
     }
   ]
 }
