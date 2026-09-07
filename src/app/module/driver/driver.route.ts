@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
+import { upload } from "../../lib/multer";
 import { auth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
 import { DriverController } from "./driver.controller";
@@ -18,6 +19,22 @@ router.get(
   "/my-profile",
   auth(Role.DRIVER),
   DriverController.getMyDriverProfile,
+);
+
+router.patch(
+  "/my-profile",
+  auth(Role.DRIVER),
+  upload.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "licensePhoto", maxCount: 5 },
+    { name: "licensePhotos", maxCount: 5 },
+    { name: "nidPhoto", maxCount: 5 },
+    { name: "nidPhotos", maxCount: 5 },
+    { name: "vehiclePhoto", maxCount: 10 },
+    { name: "vehiclePhotos", maxCount: 10 },
+  ]),
+  validateRequest(DriverValidation.updateDriverProfileSchema),
+  DriverController.updateMyDriverProfile,
 );
 
 router.patch(

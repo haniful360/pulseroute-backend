@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
+import { uploadToCloudinary } from "../../lib/cloudinary";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "../auth/auth.interface";
@@ -16,6 +17,96 @@ const getMyDriverProfile = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+const updateMyDriverProfile = catchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as IRequestUser;
+    let payload = req.body;
+
+    if (typeof req.body.data === "string") {
+      try {
+        payload = JSON.parse(req.body.data);
+      } catch {
+        // Use req.body as is
+      }
+    }
+
+    const files = req.files as
+      | { [fieldname: string]: Express.Multer.File[] }
+      | undefined;
+
+    // 1. License photos
+    const licenseFiles = [
+      ...(files?.licensePhotos || []),
+      ...(files?.licensePhoto || []),
+    ];
+    if (licenseFiles.length > 0) {
+      const uploadedLicenseUrls = await Promise.all(
+        licenseFiles.map((file) =>
+          uploadToCloudinary(file.buffer, "pulseroute/drivers/licenses"),
+        ),
+      );
+      payload.licensePhotos = [
+        ...(Array.isArray(payload.licensePhotos) ? payload.licensePhotos : []),
+        ...uploadedLicenseUrls,
+      ];
+      payload.licensePhotoUrl = payload.licensePhotos[0];
+    }
+
+    // 2. Vehicle photos
+    const vehicleFiles = [
+      ...(files?.vehiclePhotos || []),
+      ...(files?.vehiclePhoto || []),
+    ];
+    if (vehicleFiles.length > 0) {
+      const uploadedVehicleUrls = await Promise.all(
+        vehicleFiles.map((file) =>
+          uploadToCloudinary(file.buffer, "pulseroute/vehicles"),
+        ),
+      );
+      payload.vehiclePhotos = [
+        ...(Array.isArray(payload.vehiclePhotos) ? payload.vehiclePhotos : []),
+        ...uploadedVehicleUrls,
+      ];
+      payload.vehiclePhotoUrl = payload.vehiclePhotos[0];
+    }
+
+    // 3. NID photos
+    const nidFiles = [
+      ...(files?.nidPhotos || []),
+      ...(files?.nidPhoto || []),
+    ];
+    if (nidFiles.length > 0) {
+      const uploadedNidUrls = await Promise.all(
+        nidFiles.map((file) =>
+          uploadToCloudinary(file.buffer, "pulseroute/drivers/nid"),
+        ),
+      );
+      payload.nidPhotos = [
+        ...(Array.isArray(payload.nidPhotos) ? payload.nidPhotos : []),
+        ...uploadedNidUrls,
+      ];
+      payload.nidPhotoUrl = payload.nidPhotos[0];
+    }
+
+    // 4. Avatar
+    if (files?.avatar?.[0]) {
+      payload.avatarUrl = await uploadToCloudinary(
+        files.avatar[0].buffer,
+        "pulseroute/avatars",
+      );
+    }
+
+    const result = await DriverService.updateMyDriverProfile(user, payload);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Driver profile and details updated successfully",
+      data: result,
+    });
+  },
+);
 
 const getDriverDashboardOverview = catchAsync(
   async (req: Request, res: Response) => {
@@ -98,6 +189,7 @@ const verifyDriver = catchAsync(async (req: Request, res: Response) => {
 
 export const DriverController = {
   getMyDriverProfile,
+  updateMyDriverProfile,
   getDriverDashboardOverview,
   updateDutyStatus,
   updateLocation,

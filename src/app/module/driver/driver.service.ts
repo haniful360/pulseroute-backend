@@ -12,6 +12,7 @@ import { prisma } from "../../lib/prisma";
 import { IRequestUser } from "../auth/auth.interface";
 import {
   IDriverFilterRequest,
+  IUpdateDriverProfilePayload,
   IUpdateDutyStatusPayload,
   IUpdateLocationPayload,
   IVerifyDriverPayload,
@@ -23,6 +24,18 @@ const getMyDriverProfile = async (authUser: IRequestUser) => {
       userId: authUser.userId,
     },
     include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          avatarUrl: true,
+          role: true,
+          status: true,
+          emailVerified: true,
+        },
+      },
       currentVehicle: true,
       vehicles: true,
       wallet: true,
@@ -34,6 +47,190 @@ const getMyDriverProfile = async (authUser: IRequestUser) => {
   }
 
   return driver;
+};
+
+const updateMyDriverProfile = async (
+  authUser: IRequestUser,
+  payload: IUpdateDriverProfilePayload,
+) => {
+  const driver = await prisma.driver.findUnique({
+    where: {
+      userId: authUser.userId,
+    },
+    include: {
+      currentVehicle: true,
+    },
+  });
+
+  if (!driver || driver.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
+  }
+
+  const updatedDriver = await prisma.$transaction(async (tx) => {
+    // 1. Update basic User entity if user fields provided
+    const userUpdateData: {
+      name?: string;
+      phone?: string;
+      avatarUrl?: string;
+    } = {};
+    if (payload.name) userUpdateData.name = payload.name;
+    if (payload.phone || payload.contactNumber) {
+      userUpdateData.phone = payload.phone || payload.contactNumber;
+    }
+    if (payload.avatarUrl) userUpdateData.avatarUrl = payload.avatarUrl;
+
+    if (Object.keys(userUpdateData).length > 0) {
+      await tx.user.update({
+        where: { id: authUser.userId },
+        data: userUpdateData,
+      });
+    }
+
+    // 2. Update Driver entity
+    const driverUpdateData: any = {};
+    if (payload.name) driverUpdateData.name = payload.name;
+    if (payload.phone || payload.contactNumber) {
+      driverUpdateData.contactNumber = payload.phone || payload.contactNumber;
+    }
+    if (payload.licenseNumber)
+      driverUpdateData.licenseNumber = payload.licenseNumber;
+    if (payload.licenseExpiry)
+      driverUpdateData.licenseExpiry = new Date(payload.licenseExpiry);
+    if (payload.licensePhotoUrl)
+      driverUpdateData.licensePhotoUrl = payload.licensePhotoUrl;
+    if (payload.licensePhotos && payload.licensePhotos.length > 0) {
+      driverUpdateData.licensePhotos = payload.licensePhotos;
+      if (!driverUpdateData.licensePhotoUrl) {
+        driverUpdateData.licensePhotoUrl = payload.licensePhotos[0];
+      }
+    }
+    if (payload.nidNumber) driverUpdateData.nidNumber = payload.nidNumber;
+    if (payload.nidPhotoUrl) driverUpdateData.nidPhotoUrl = payload.nidPhotoUrl;
+    if (payload.nidPhotos && payload.nidPhotos.length > 0) {
+      driverUpdateData.nidPhotos = payload.nidPhotos;
+      if (!driverUpdateData.nidPhotoUrl) {
+        driverUpdateData.nidPhotoUrl = payload.nidPhotos[0];
+      }
+    }
+    if (payload.experienceYears !== undefined) {
+      driverUpdateData.experienceYears = Number(payload.experienceYears);
+    }
+
+    if (Object.keys(driverUpdateData).length > 0) {
+      await tx.driver.update({
+        where: { id: driver.id },
+        data: driverUpdateData,
+      });
+    }
+
+    // 3. Update or Create Vehicle if vehicle fields provided
+    const hasVehiclePayload =
+      payload.vehicleNumber ||
+      payload.ambulanceType ||
+      payload.model ||
+      payload.manufacturer ||
+      payload.year !== undefined ||
+      payload.vehiclePhotoUrl ||
+      (payload.vehiclePhotos && payload.vehiclePhotos.length > 0) ||
+      payload.hasOxygen !== undefined ||
+      payload.hasVentilator !== undefined ||
+      payload.hasDefibrillator !== undefined ||
+      payload.hasSuctionMachine !== undefined ||
+      payload.equipmentDetails;
+
+    if (hasVehiclePayload) {
+      if (driver.currentVehicleId) {
+        // Update existing vehicle
+        const vehicleUpdateData: any = {};
+        if (payload.vehicleNumber)
+          vehicleUpdateData.vehicleNumber = payload.vehicleNumber;
+        if (payload.ambulanceType)
+          vehicleUpdateData.ambulanceType = payload.ambulanceType;
+        if (payload.model) vehicleUpdateData.model = payload.model;
+        if (payload.manufacturer)
+          vehicleUpdateData.manufacturer = payload.manufacturer;
+        if (payload.year !== undefined)
+          vehicleUpdateData.year = Number(payload.year);
+        if (payload.vehiclePhotoUrl)
+          vehicleUpdateData.photoUrl = payload.vehiclePhotoUrl;
+        if (payload.vehiclePhotos && payload.vehiclePhotos.length > 0) {
+          vehicleUpdateData.photos = payload.vehiclePhotos;
+          if (!vehicleUpdateData.photoUrl) {
+            vehicleUpdateData.photoUrl = payload.vehiclePhotos[0];
+          }
+        }
+        if (payload.hasOxygen !== undefined)
+          vehicleUpdateData.hasOxygen = payload.hasOxygen;
+        if (payload.hasVentilator !== undefined)
+          vehicleUpdateData.hasVentilator = payload.hasVentilator;
+        if (payload.hasDefibrillator !== undefined)
+          vehicleUpdateData.hasDefibrillator = payload.hasDefibrillator;
+        if (payload.hasSuctionMachine !== undefined)
+          vehicleUpdateData.hasSuctionMachine = payload.hasSuctionMachine;
+        if (payload.equipmentDetails !== undefined)
+          vehicleUpdateData.equipmentDetails = payload.equipmentDetails;
+
+        await tx.vehicle.update({
+          where: { id: driver.currentVehicleId },
+          data: vehicleUpdateData,
+        });
+      } else if (payload.vehicleNumber && payload.ambulanceType) {
+        // Create new vehicle and assign as currentVehicleId
+        const newVehicle = await tx.vehicle.create({
+          data: {
+            driverId: driver.id,
+            vehicleNumber: payload.vehicleNumber,
+            ambulanceType: payload.ambulanceType,
+            photoUrl:
+              payload.vehiclePhotoUrl ||
+              payload.vehiclePhotos?.[0] ||
+              undefined,
+            photos:
+              payload.vehiclePhotos ||
+              (payload.vehiclePhotoUrl ? [payload.vehiclePhotoUrl] : []),
+            model: payload.model,
+            manufacturer: payload.manufacturer,
+            year: payload.year ? Number(payload.year) : undefined,
+            hasOxygen:
+              payload.hasOxygen !== undefined ? payload.hasOxygen : true,
+            hasVentilator: payload.hasVentilator || false,
+            hasDefibrillator: payload.hasDefibrillator || false,
+            hasSuctionMachine: payload.hasSuctionMachine || false,
+            equipmentDetails: payload.equipmentDetails,
+            verificationStatus: VehicleVerificationStatus.PENDING,
+          },
+        });
+
+        await tx.driver.update({
+          where: { id: driver.id },
+          data: { currentVehicleId: newVehicle.id },
+        });
+      }
+    }
+
+    return tx.driver.findUnique({
+      where: { id: driver.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            avatarUrl: true,
+            role: true,
+            status: true,
+            emailVerified: true,
+          },
+        },
+        currentVehicle: true,
+        vehicles: true,
+        wallet: true,
+      },
+    });
+  });
+
+  return updatedDriver;
 };
 
 const updateDutyStatus = async (
@@ -547,6 +744,7 @@ const getDriverDashboardOverview = async (authUser: IRequestUser) => {
 
 export const DriverService = {
   getMyDriverProfile,
+  updateMyDriverProfile,
   getDriverDashboardOverview,
   updateDutyStatus,
   updateLocation,

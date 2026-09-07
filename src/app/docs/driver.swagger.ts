@@ -1,4 +1,76 @@
 export const driverSchemas = {
+  UpdateDriverProfileRequest: {
+    type: "object",
+    properties: {
+      name: { type: "string", example: "Kamal Hossain" },
+      phone: { type: "string", example: "+8801811223344" },
+      avatarUrl: {
+        type: "string",
+        example: "https://res.cloudinary.com/demo/image/upload/avatar.jpg",
+      },
+      licenseNumber: { type: "string", example: "DL-DHAKA-2024-9988" },
+      licenseExpiry: {
+        type: "string",
+        format: "date",
+        example: "2028-12-31",
+      },
+      licensePhotoUrl: {
+        type: "string",
+        example: "https://res.cloudinary.com/demo/image/upload/license.jpg",
+      },
+      licensePhotos: {
+        type: "array",
+        items: { type: "string" },
+        example: [
+          "https://res.cloudinary.com/demo/image/upload/license_front.jpg",
+          "https://res.cloudinary.com/demo/image/upload/license_back.jpg",
+        ],
+      },
+      nidNumber: { type: "string", example: "19901234567890123" },
+      nidPhotoUrl: {
+        type: "string",
+        example: "https://res.cloudinary.com/demo/image/upload/nid.jpg",
+      },
+      nidPhotos: {
+        type: "array",
+        items: { type: "string" },
+        example: [
+          "https://res.cloudinary.com/demo/image/upload/nid_front.jpg",
+          "https://res.cloudinary.com/demo/image/upload/nid_back.jpg",
+        ],
+      },
+      experienceYears: { type: "integer", example: 6 },
+      vehicleNumber: { type: "string", example: "DHAKA-METRO-CHA-11-2233" },
+      ambulanceType: {
+        type: "string",
+        enum: ["AC", "NON_AC", "ICU", "FREEZER", "NEONATAL", "BASIC"],
+        example: "ICU",
+      },
+      model: { type: "string", example: "Toyota HiAce Grandia Ambulance" },
+      manufacturer: { type: "string", example: "Toyota" },
+      year: { type: "integer", example: 2023 },
+      vehiclePhotoUrl: {
+        type: "string",
+        example: "https://res.cloudinary.com/demo/image/upload/ambulance.jpg",
+      },
+      vehiclePhotos: {
+        type: "array",
+        items: { type: "string" },
+        example: [
+          "https://res.cloudinary.com/demo/image/upload/ambulance_front.jpg",
+          "https://res.cloudinary.com/demo/image/upload/ambulance_inside.jpg",
+        ],
+      },
+      hasOxygen: { type: "boolean", example: true },
+      hasVentilator: { type: "boolean", example: true },
+      hasDefibrillator: { type: "boolean", example: true },
+      hasSuctionMachine: { type: "boolean", example: true },
+      equipmentDetails: {
+        type: "string",
+        example: "Portable ICU ventilator, defibrillator, high-flow oxygen",
+      },
+    },
+  },
   UpdateDutyStatusRequest: {
     type: "object",
     required: ["dutyStatus"],
@@ -211,6 +283,141 @@ export const driverPaths = {
           content: {
             "application/json": {
               schema: { $ref: "#/components/schemas/DriverProfileResponse" },
+            },
+          },
+        },
+        401: {
+          description: "Unauthorized",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/StandardErrorResponse" },
+            },
+          },
+        },
+        403: {
+          description: "Forbidden - requires DRIVER role",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/StandardErrorResponse" },
+            },
+          },
+        },
+      },
+    },
+    patch: {
+      tags: ["Driver Operations"],
+      summary: "Update Driver Profile & Vehicle Details",
+      description:
+        "Dedicated full-access profile update for authenticated drivers. Allows updating personal user info (`name`, `phone`, `avatar`), driver documents (`licenseNumber`, `licenseExpiry`, `licensePhotos`, `nidNumber`, `nidPhotos`, `experienceYears`), and assigned vehicle specs (`vehicleNumber`, `ambulanceType`, `vehiclePhotos`, `equipmentDetails`, equipment toggles). Supports both JSON payloads and multipart file uploads.",
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                avatar: {
+                  type: "string",
+                  format: "binary",
+                  description: "Profile portrait picture",
+                },
+                licensePhoto: {
+                  type: "string",
+                  format: "binary",
+                  description: "Single driving license photo",
+                },
+                licensePhotos: {
+                  type: "array",
+                  items: { type: "string", format: "binary" },
+                  description: "Multiple license photos / scans",
+                },
+                nidPhoto: {
+                  type: "string",
+                  format: "binary",
+                  description: "Single NID card photo",
+                },
+                nidPhotos: {
+                  type: "array",
+                  items: { type: "string", format: "binary" },
+                  description: "Multiple NID photos (front & back)",
+                },
+                vehiclePhoto: {
+                  type: "string",
+                  format: "binary",
+                  description: "Single ambulance vehicle photo",
+                },
+                vehiclePhotos: {
+                  type: "array",
+                  items: { type: "string", format: "binary" },
+                  description: "Multiple ambulance photos",
+                },
+                name: { type: "string", example: "Kamal Hossain" },
+                phone: { type: "string", example: "+8801811223344" },
+                licenseNumber: {
+                  type: "string",
+                  example: "DL-DHAKA-2024-9988",
+                },
+                licenseExpiry: {
+                  type: "string",
+                  format: "date",
+                  example: "2028-12-31",
+                },
+                nidNumber: { type: "string", example: "19901234567890123" },
+                experienceYears: { type: "integer", example: 6 },
+                vehicleNumber: {
+                  type: "string",
+                  example: "DHAKA-METRO-CHA-11-2233",
+                },
+                ambulanceType: {
+                  type: "string",
+                  enum: [
+                    "AC",
+                    "NON_AC",
+                    "ICU",
+                    "FREEZER",
+                    "NEONATAL",
+                    "BASIC",
+                  ],
+                  example: "ICU",
+                },
+                model: {
+                  type: "string",
+                  example: "Toyota HiAce Grandia Ambulance",
+                },
+                manufacturer: { type: "string", example: "Toyota" },
+                year: { type: "integer", example: 2023 },
+                hasOxygen: { type: "boolean", example: true },
+                hasVentilator: { type: "boolean", example: true },
+                hasDefibrillator: { type: "boolean", example: true },
+                hasSuctionMachine: { type: "boolean", example: true },
+                equipmentDetails: {
+                  type: "string",
+                  example:
+                    "Portable ICU ventilator, defibrillator, high-flow oxygen",
+                },
+              },
+            },
+          },
+          "application/json": {
+            schema: { $ref: "#/components/schemas/UpdateDriverProfileRequest" },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "Driver profile and details updated successfully",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/DriverProfileResponse" },
+            },
+          },
+        },
+        400: {
+          description: "Bad Request - validation failed",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/StandardErrorResponse" },
             },
           },
         },
