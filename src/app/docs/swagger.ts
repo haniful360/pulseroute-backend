@@ -25,8 +25,12 @@ export const swaggerDocument = {
   },
   servers: [
     {
+      url: "/",
+      description: "Current Server (Auto-detects Vercel Production & Localhost)",
+    },
+    {
       url: "http://localhost:5000",
-      description: "Local Development Server",
+      description: "Localhost Development Server (Port 5000)",
     },
   ],
   components: {

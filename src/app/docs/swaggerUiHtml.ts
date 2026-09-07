@@ -32,7 +32,11 @@ export const getSwaggerHtml = () => `<!DOCTYPE html>
         ],
         layout: "StandaloneLayout",
         docExpansion: "list",
-        persistAuthorization: true
+        filter: true,
+        displayRequestDuration: true,
+        persistAuthorization: true,
+        defaultModelsExpandDepth: 1,
+        defaultModelExpandDepth: 1
       });
     };
   </script>

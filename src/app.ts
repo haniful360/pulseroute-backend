@@ -81,7 +81,12 @@ app.use(
   "/api-docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, {
-    swaggerOptions: { docExpansion: "list", persistAuthorization: true },
+    swaggerOptions: {
+      docExpansion: "list",
+      filter: true,
+      displayRequestDuration: true,
+      persistAuthorization: true,
+    },
   }),
 );
 
