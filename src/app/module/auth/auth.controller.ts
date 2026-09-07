@@ -139,7 +139,10 @@ const registerDriver = catchAsync(async (req: Request, res: Response) => {
   }
 
   // 3. NID photos
-  const nidFiles = [...(files?.nidPhotos || []), ...(files?.nidPhoto || [])];
+  const nidFiles = [
+    ...(files?.nidPhotos || []),
+    ...(files?.nidPhoto || []),
+  ];
   if (nidFiles.length > 0) {
     const uploadedNidUrls = await Promise.all(
       nidFiles.map((file) =>
