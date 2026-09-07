@@ -37,9 +37,24 @@ app.use(
 // Global Rate Limiting for all API endpoints
 app.use("/api/v1", globalLimiter);
 
+const allowedOrigins = [
+  config.frontend_url,
+  "http://localhost:3000",
+  "http://127.0.0.1:5500",
+].filter(Boolean) as string[];
+
 app.use(
   cors({
-    origin: config.frontend_url || "http://localhost:3000",
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        config.node_env !== "production"
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error("Blocked by CORS policy"));
+    },
     credentials: true,
   }),
 );
