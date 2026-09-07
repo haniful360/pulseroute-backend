@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
+import { uploadToCloudinary } from "../../lib/cloudinary";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "../auth/auth.interface";
@@ -7,7 +8,45 @@ import { VehicleService } from "./vehicle.service";
 
 const createVehicle = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
-  const result = await VehicleService.createVehicle(user, req.body);
+  let payload = req.body;
+
+  if (typeof req.body.data === "string") {
+    try {
+      payload = JSON.parse(req.body.data);
+    } catch {
+      // Use req.body as is
+    }
+  }
+
+  const files = req.files as
+    | { [fieldname: string]: Express.Multer.File[] }
+    | undefined;
+
+  const vehicleFiles = [
+    ...(files?.photos || []),
+    ...(files?.photo || []),
+    ...(files?.vehiclePhotos || []),
+    ...(files?.vehiclePhoto || []),
+  ];
+
+  if (vehicleFiles.length > 0) {
+    const uploadedUrls = await Promise.all(
+      vehicleFiles.map((file) =>
+        uploadToCloudinary(file.buffer, "pulseroute/vehicles"),
+      ),
+    );
+    payload.photos = [
+      ...(Array.isArray(payload.photos)
+        ? payload.photos
+        : payload.photos
+          ? [payload.photos]
+          : []),
+      ...uploadedUrls,
+    ];
+    payload.photoUrl = payload.photos[0];
+  }
+
+  const result = await VehicleService.createVehicle(user, payload);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -32,10 +71,48 @@ const getMyVehicles = catchAsync(async (req: Request, res: Response) => {
 const updateVehicle = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
   const { id } = req.params;
+  let payload = req.body;
+
+  if (typeof req.body.data === "string") {
+    try {
+      payload = JSON.parse(req.body.data);
+    } catch {
+      // Use req.body as is
+    }
+  }
+
+  const files = req.files as
+    | { [fieldname: string]: Express.Multer.File[] }
+    | undefined;
+
+  const vehicleFiles = [
+    ...(files?.photos || []),
+    ...(files?.photo || []),
+    ...(files?.vehiclePhotos || []),
+    ...(files?.vehiclePhoto || []),
+  ];
+
+  if (vehicleFiles.length > 0) {
+    const uploadedUrls = await Promise.all(
+      vehicleFiles.map((file) =>
+        uploadToCloudinary(file.buffer, "pulseroute/vehicles"),
+      ),
+    );
+    payload.photos = [
+      ...(Array.isArray(payload.photos)
+        ? payload.photos
+        : payload.photos
+          ? [payload.photos]
+          : []),
+      ...uploadedUrls,
+    ];
+    payload.photoUrl = payload.photos[0];
+  }
+
   const result = await VehicleService.updateVehicle(
     user,
     id as string,
-    req.body,
+    payload,
   );
 
   sendResponse(res, {

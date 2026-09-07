@@ -61,6 +61,88 @@ export const vehicleSchemas = {
       },
     },
   },
+  CreateVehicleMultipartRequest: {
+    type: "object",
+    required: ["ambulanceType", "vehicleNumber"],
+    properties: {
+      ambulanceType: {
+        type: "string",
+        enum: ["BASIC", "AC", "ICU", "CCU", "FREEZER", "NEONATAL"],
+        example: "ICU",
+      },
+      vehicleNumber: {
+        type: "string",
+        example: "DHAKA-METRO-CHA-11-2233",
+      },
+      photo: {
+        type: "string",
+        format: "binary",
+        description: "Single ambulance photo file",
+      },
+      photos: {
+        type: "array",
+        items: { type: "string", format: "binary" },
+        description: "Multiple ambulance photo files",
+      },
+      model: {
+        type: "string",
+        example: "HiAce High Roof Ambulance",
+      },
+      manufacturer: {
+        type: "string",
+        example: "Toyota",
+      },
+      year: {
+        type: "integer",
+        example: 2022,
+      },
+      hasOxygen: {
+        type: "boolean",
+        example: true,
+      },
+      hasVentilator: {
+        type: "boolean",
+        example: true,
+      },
+      hasDefibrillator: {
+        type: "boolean",
+        example: true,
+      },
+      hasSuctionMachine: {
+        type: "boolean",
+        example: true,
+      },
+      equipmentDetails: {
+        type: "string",
+        example:
+          "Portable ventilator with built-in backup battery, high-flow oxygen cylinder",
+      },
+    },
+  },
+  UpdateVehicleMultipartRequest: {
+    type: "object",
+    properties: {
+      photo: {
+        type: "string",
+        format: "binary",
+        description: "Single ambulance photo file",
+      },
+      photos: {
+        type: "array",
+        items: { type: "string", format: "binary" },
+        description: "Multiple ambulance photo files",
+      },
+      model: { type: "string", example: "HiAce Grand Cabin" },
+      manufacturer: { type: "string", example: "Toyota" },
+      year: { type: "integer", example: 2023 },
+      hasOxygen: { type: "boolean", example: true },
+      hasVentilator: { type: "boolean", example: true },
+      hasDefibrillator: { type: "boolean", example: true },
+      hasSuctionMachine: { type: "boolean", example: true },
+      equipmentDetails: { type: "string" },
+      isActive: { type: "boolean", example: true },
+    },
+  },
   UpdateVehicleRequest: {
     type: "object",
     properties: {
@@ -156,11 +238,14 @@ export const vehiclePaths = {
       tags: ["Vehicle & Fleet Management"],
       summary: "Register a New Ambulance (Driver Only)",
       description:
-        "Allows an authenticated driver to register an ambulance vehicle. Newly created vehicles are placed in PENDING verification status.",
+        "Allows an authenticated driver to register an ambulance vehicle with equipment details and photo uploads (via multipart/form-data or JSON). Newly created vehicles are placed in PENDING verification status.",
       security: [{ bearerAuth: [] }],
       requestBody: {
         required: true,
         content: {
+          "multipart/form-data": {
+            schema: { $ref: "#/components/schemas/CreateVehicleMultipartRequest" },
+          },
           "application/json": {
             schema: { $ref: "#/components/schemas/CreateVehicleRequest" },
           },
@@ -312,7 +397,7 @@ export const vehiclePaths = {
       tags: ["Vehicle & Fleet Management"],
       summary: "Update Ambulance Details (Driver Only)",
       description:
-        "Allows driver to update equipment specifications (oxygen, ventilator, defibrillator, suction) and active status of their owned vehicle.",
+        "Allows driver to update equipment specifications (oxygen, ventilator, defibrillator, suction), photos, and active status of their owned vehicle.",
       security: [{ bearerAuth: [] }],
       parameters: [
         {
@@ -325,6 +410,9 @@ export const vehiclePaths = {
       requestBody: {
         required: true,
         content: {
+          "multipart/form-data": {
+            schema: { $ref: "#/components/schemas/UpdateVehicleMultipartRequest" },
+          },
           "application/json": {
             schema: { $ref: "#/components/schemas/UpdateVehicleRequest" },
           },

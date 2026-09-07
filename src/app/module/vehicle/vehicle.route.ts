@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
+import { upload } from "../../lib/multer";
 import { auth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
 import { VehicleController } from "./vehicle.controller";
@@ -11,6 +12,12 @@ const router = Router();
 router.post(
   "/",
   auth(Role.DRIVER),
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "photos", maxCount: 10 },
+    { name: "vehiclePhoto", maxCount: 1 },
+    { name: "vehiclePhotos", maxCount: 10 },
+  ]),
   validateRequest(VehicleValidation.createVehicleSchema),
   VehicleController.createVehicle,
 );
@@ -20,6 +27,12 @@ router.get("/my-vehicles", auth(Role.DRIVER), VehicleController.getMyVehicles);
 router.patch(
   "/:id",
   auth(Role.DRIVER),
+  upload.fields([
+    { name: "photo", maxCount: 1 },
+    { name: "photos", maxCount: 10 },
+    { name: "vehiclePhoto", maxCount: 1 },
+    { name: "vehiclePhotos", maxCount: 10 },
+  ]),
   validateRequest(VehicleValidation.updateVehicleSchema),
   VehicleController.updateVehicle,
 );
