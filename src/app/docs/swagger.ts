@@ -106,6 +106,9 @@ export const swaggerDocument = {
           "password",
           "contactNumber",
           "licenseNumber",
+          "licensePhotos",
+          "nidPhotos",
+          "vehiclePhotos",
         ],
         properties: {
           name: { type: "string", example: "Kamal Hossain" },
@@ -461,6 +464,9 @@ export const swaggerDocument = {
                   "password",
                   "contactNumber",
                   "licenseNumber",
+                  "licensePhotos",
+                  "nidPhotos",
+                  "vehiclePhotos",
                 ],
                 properties: {
                   name: { type: "string", example: "Kamal Hossain" },

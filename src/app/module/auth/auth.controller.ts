@@ -164,6 +164,28 @@ const registerDriver = catchAsync(async (req: Request, res: Response) => {
     );
   }
 
+  // Validate mandatory photos (licensePhotos, nidPhotos, vehiclePhotos)
+  if (!payload.licensePhotos || payload.licensePhotos.length === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Driving license photo(s) (licensePhotos) are mandatory. Please upload at least one photo of your license.",
+    );
+  }
+
+  if (!payload.nidPhotos || payload.nidPhotos.length === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "NID photo(s) (nidPhotos) are mandatory. Please upload at least one photo of your NID card.",
+    );
+  }
+
+  if (!payload.vehiclePhotos || payload.vehiclePhotos.length === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Vehicle photo(s) (vehiclePhotos) are mandatory. Please upload at least one photo of your vehicle / ambulance.",
+    );
+  }
+
   const result = await AuthService.registerDriver(payload);
 
   sendResponse(res, {

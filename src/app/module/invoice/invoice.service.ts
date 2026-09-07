@@ -453,10 +453,7 @@ const exportInvoiceReceipt = async (
     ["--------------------", "--------------------"],
     ["Patient Name", invoice.trip.patient.name],
     ["Patient Contact", invoice.trip.patient.contactNumber || "N/A"],
-    [
-      "Emergency Contact",
-      invoice.trip.patient.emergencyContactNumber || "N/A",
-    ],
+    ["Emergency Contact", invoice.trip.patient.emergencyContactNumber || "N/A"],
     ["Emergency Severity", invoice.trip.emergencySeverity],
     ["Pickup Address", invoice.trip.pickupAddress],
     ["Destination Hospital", invoice.trip.destinationAddress || "N/A"],
