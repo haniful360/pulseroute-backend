@@ -20,6 +20,15 @@ export const uploadToCloudinary = (
   folder = "pulseroute",
   filename?: string,
 ): Promise<string> => {
+  // Re-verify config in case env loaded dynamically
+  if (!config.cloudinary_name || !config.cloudinary_api_key || !config.cloudinary_api_secret) {
+    cloudinary.config({
+      cloud_name: config.cloudinary_name,
+      api_key: config.cloudinary_api_key,
+      api_secret: config.cloudinary_api_secret,
+    });
+  }
+
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
