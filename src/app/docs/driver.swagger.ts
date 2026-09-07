@@ -102,26 +102,6 @@ export const driverSchemas = {
         example: 90.4125,
         description: "Current GPS longitude",
       },
-      heading: {
-        type: "number",
-        minimum: 0,
-        maximum: 360,
-        example: 180.5,
-        description: "Compass heading in degrees (0-360)",
-      },
-      speed: {
-        type: "number",
-        minimum: 0,
-        example: 45.0,
-        description: "Current travel speed in km/h",
-      },
-      vehicleId: {
-        type: "string",
-        format: "uuid",
-        example: "a8e1b369-e37d-4b82-9657-36e3981881f2",
-        description:
-          "Optional. Set or update current active vehicle along with location",
-      },
     },
   },
   VerifyDriverRequest: {

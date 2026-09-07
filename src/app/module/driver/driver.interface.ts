@@ -40,9 +40,6 @@ export interface IUpdateDutyStatusPayload {
 export interface IUpdateLocationPayload {
   latitude: number;
   longitude: number;
-  heading?: number;
-  speed?: number;
-  vehicleId?: string;
 }
 
 export interface IVerifyDriverPayload {

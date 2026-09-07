@@ -91,13 +91,6 @@ const updateLocationSchema = z.object({
     .number({ message: "Longitude is required" })
     .min(-180, "Longitude must be >= -180")
     .max(180, "Longitude must be <= 180"),
-  heading: z
-    .number()
-    .min(0, "Heading must be >= 0")
-    .max(360, "Heading must be <= 360")
-    .optional(),
-  speed: z.number().min(0, "Speed cannot be negative").optional(),
-  vehicleId: z.string().uuid("Invalid Vehicle ID format").optional(),
 });
 
 const verifyDriverSchema = z.object({

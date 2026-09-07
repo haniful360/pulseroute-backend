@@ -244,7 +244,9 @@ export const vehiclePaths = {
         required: true,
         content: {
           "multipart/form-data": {
-            schema: { $ref: "#/components/schemas/CreateVehicleMultipartRequest" },
+            schema: {
+              $ref: "#/components/schemas/CreateVehicleMultipartRequest",
+            },
           },
           "application/json": {
             schema: { $ref: "#/components/schemas/CreateVehicleRequest" },
@@ -411,7 +413,9 @@ export const vehiclePaths = {
         required: true,
         content: {
           "multipart/form-data": {
-            schema: { $ref: "#/components/schemas/UpdateVehicleMultipartRequest" },
+            schema: {
+              $ref: "#/components/schemas/UpdateVehicleMultipartRequest",
+            },
           },
           "application/json": {
             schema: { $ref: "#/components/schemas/UpdateVehicleRequest" },
