@@ -7,7 +7,7 @@ export const invoiceSchemas = {
         type: "string",
         enum: ["STRIPE"],
         example: "STRIPE",
-        description: "Online payment settlement via Stripe.",
+        description: "Online cashless payment settlement via Stripe.",
       },
       paidAmount: {
         type: "number",
@@ -18,12 +18,12 @@ export const invoiceSchemas = {
         type: "string",
         example: "ch_3Mtwx1LkdIwHu7ix0snNq8GS",
         description:
-          "Transaction / PaymentIntent ID returned from Stripe after successful checkout.",
+          "Transaction / PaymentIntent ID returned from Stripe after checkout.",
       },
       paymentGateway: {
         type: "string",
         example: "STRIPE",
-        description: "Payment gateway provider (defaults to STRIPE).",
+        description: "Payment gateway provider (STRIPE).",
       },
     },
   },
