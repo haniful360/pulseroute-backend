@@ -5,9 +5,9 @@ export const invoiceSchemas = {
     properties: {
       paymentMethod: {
         type: "string",
-        enum: ["STRIPE"],
-        example: "STRIPE",
-        description: "Online payment settlement via Stripe.",
+        enum: ["CASH", "STRIPE"],
+        example: "CASH",
+        description: "Payment method used (CASH or STRIPE).",
       },
       paidAmount: {
         type: "number",
@@ -18,11 +18,12 @@ export const invoiceSchemas = {
         type: "string",
         example: "ch_3Mtwx1LkdIwHu7ix0snNq8GS",
         description:
-          "Transaction ID returned from payment gateway if paid online.",
+          "Optional. Transaction / Charge ID returned from payment gateway if paid online.",
       },
       paymentGateway: {
         type: "string",
-        example: "STRIPE",
+        example: "CASH",
+        description: "Optional. Gateway name (e.g. CASH, STRIPE, BKASH, SSLCOMMERZ).",
       },
     },
   },

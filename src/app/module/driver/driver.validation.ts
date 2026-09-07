@@ -24,11 +24,10 @@ const updateDriverProfileSchema = z.object({
   nidNumber: z.string().optional(),
   nidPhotoUrl: z.string().optional(),
   nidPhotos: z.union([z.string(), z.array(z.string())]).optional(),
-  experienceYears: z
-    .preprocess(
-      (val) => (val !== undefined && val !== "" ? Number(val) : undefined),
-      z.number().int().nonnegative().optional(),
-    ),
+  experienceYears: z.preprocess(
+    (val) => (val !== undefined && val !== "" ? Number(val) : undefined),
+    z.number().int().nonnegative().optional(),
+  ),
 
   // Vehicle Details
   vehicleNumber: z.string().optional(),
@@ -44,37 +43,48 @@ const updateDriverProfileSchema = z.object({
     .optional(),
   model: z.string().optional(),
   manufacturer: z.string().optional(),
-  year: z
-    .preprocess(
-      (val) => (val !== undefined && val !== "" ? Number(val) : undefined),
-      z.number().int().optional(),
-    ),
+  year: z.preprocess(
+    (val) => (val !== undefined && val !== "" ? Number(val) : undefined),
+    z.number().int().optional(),
+  ),
   vehiclePhotoUrl: z.string().optional(),
   vehiclePhotos: z.union([z.string(), z.array(z.string())]).optional(),
-  hasOxygen: z
-    .preprocess(
-      (val) =>
-        typeof val === "string" ? val.toLowerCase() === "true" : typeof val === "boolean" ? val : undefined,
-      z.boolean().optional(),
-    ),
-  hasVentilator: z
-    .preprocess(
-      (val) =>
-        typeof val === "string" ? val.toLowerCase() === "true" : typeof val === "boolean" ? val : undefined,
-      z.boolean().optional(),
-    ),
-  hasDefibrillator: z
-    .preprocess(
-      (val) =>
-        typeof val === "string" ? val.toLowerCase() === "true" : typeof val === "boolean" ? val : undefined,
-      z.boolean().optional(),
-    ),
-  hasSuctionMachine: z
-    .preprocess(
-      (val) =>
-        typeof val === "string" ? val.toLowerCase() === "true" : typeof val === "boolean" ? val : undefined,
-      z.boolean().optional(),
-    ),
+  hasOxygen: z.preprocess(
+    (val) =>
+      typeof val === "string"
+        ? val.toLowerCase() === "true"
+        : typeof val === "boolean"
+          ? val
+          : undefined,
+    z.boolean().optional(),
+  ),
+  hasVentilator: z.preprocess(
+    (val) =>
+      typeof val === "string"
+        ? val.toLowerCase() === "true"
+        : typeof val === "boolean"
+          ? val
+          : undefined,
+    z.boolean().optional(),
+  ),
+  hasDefibrillator: z.preprocess(
+    (val) =>
+      typeof val === "string"
+        ? val.toLowerCase() === "true"
+        : typeof val === "boolean"
+          ? val
+          : undefined,
+    z.boolean().optional(),
+  ),
+  hasSuctionMachine: z.preprocess(
+    (val) =>
+      typeof val === "string"
+        ? val.toLowerCase() === "true"
+        : typeof val === "boolean"
+          ? val
+          : undefined,
+    z.boolean().optional(),
+  ),
   equipmentDetails: z.string().optional(),
 });
 

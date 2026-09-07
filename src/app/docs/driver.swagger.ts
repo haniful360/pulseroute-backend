@@ -351,14 +351,7 @@ export const driverPaths = {
                 },
                 ambulanceType: {
                   type: "string",
-                  enum: [
-                    "AC",
-                    "NON_AC",
-                    "ICU",
-                    "FREEZER",
-                    "NEONATAL",
-                    "BASIC",
-                  ],
+                  enum: ["AC", "NON_AC", "ICU", "FREEZER", "NEONATAL", "BASIC"],
                   example: "ICU",
                 },
                 model: {
