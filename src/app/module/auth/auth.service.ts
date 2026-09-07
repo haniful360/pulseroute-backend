@@ -412,7 +412,6 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
     return {
       type: "USER" as const,
       user,
-      patient,
       accessToken,
       refreshToken,
     };
@@ -572,7 +571,6 @@ const verifyOtp = async (payload: IVerifyOtpPayload) => {
     return {
       type: "DRIVER" as const,
       user: result.user,
-      driver: result.driver,
       accessToken,
       refreshToken,
     };

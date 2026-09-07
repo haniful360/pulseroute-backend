@@ -33,6 +33,9 @@ router.post(
   validateRequest(AuthValidation.registerDriverSchema),
   AuthController.registerDriver,
 );
+router.post("/verify-otp", authLimiter, AuthController.verifyOtp);
+router.post("/verify-user-otp", authLimiter, AuthController.verifyOtp);
+router.post("/resend-otp", authLimiter, AuthController.resendOtp);
 
 router.post(
   "/verify-otp",
@@ -56,6 +59,8 @@ router.post(
 );
 
 // Password recovery routes
+router.post("/forgot-password", authLimiter, AuthController.forgotPassword);
+router.post("/reset-password", authLimiter, AuthController.resetPassword);
 router.post(
   "/forgot-password",
   authLimiter,
@@ -71,6 +76,7 @@ router.post(
 );
 
 // Google Sign-In / Login
+router.post("/google-login", AuthController.googleLogin);
 router.post(
   "/google-login",
   validateRequest(AuthValidation.googleLoginSchema),
@@ -78,6 +84,7 @@ router.post(
 );
 
 // Universal dynamic login
+router.post("/login", authLimiter, AuthController.loginUser);
 router.post(
   "/login",
   authLimiter,
@@ -86,6 +93,7 @@ router.post(
 );
 
 // Refresh token & logout
+router.post("/refresh-token", AuthController.refreshToken);
 router.post(
   "/refresh-token",
   validateRequest(AuthValidation.refreshTokenSchema),

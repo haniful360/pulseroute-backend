@@ -23,10 +23,8 @@ export interface IRegisterDriverPayload {
   licenseExpiry?: string | Date;
   licensePhotoUrl?: string;
   licensePhotos?: string[];
-  licensePhotos: string[];
   nidNumber?: string;
   nidPhotoUrl?: string;
-  nidPhotos?: string[];
   nidPhotos: string[];
   avatarUrl?: string;
   experienceYears?: number;
@@ -36,7 +34,6 @@ export interface IRegisterDriverPayload {
   ambulanceType?: AmbulanceType;
   vehiclePhotoUrl?: string;
   vehiclePhotos?: string[];
-  vehiclePhotos: string[];
   model?: string;
   manufacturer?: string;
   year?: number;

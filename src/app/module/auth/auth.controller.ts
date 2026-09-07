@@ -5,6 +5,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "./auth.interface";
 import { AuthService } from "./auth.service";
+import AppError from "../../errors/AppError";
 
 const cookieOptions = {
   httpOnly: true,
