@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate && tsup",
+    "build": "tsup",
     "vercel-build": "prisma generate",
     "build:tsc": "tsc",
     "start": "node dist/server.js",
