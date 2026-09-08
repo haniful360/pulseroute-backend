@@ -91,8 +91,6 @@ const generateInvoiceForTrip = async (tripId: string) => {
   return invoice;
 };
 
-
-
 const getInvoiceById = async (authUser: IRequestUser, id: string) => {
   const invoice = await prisma.invoice.findUnique({
     where: { id },

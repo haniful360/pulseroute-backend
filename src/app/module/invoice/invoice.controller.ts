@@ -21,8 +21,6 @@ const generateInvoiceForTrip = catchAsync(
   },
 );
 
-
-
 const getInvoiceById = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
   const { id } = req.params;
