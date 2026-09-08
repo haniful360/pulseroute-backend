@@ -6,33 +6,41 @@ import { prisma } from "./app/lib/prisma";
 import { redisClient } from "./app/lib/redis";
 import { initSocket } from "./app/lib/socket";
 
-const PORT = config.port;
+const PORT = config.port || 5000;
 
-const main = async () => {
+const initServices = async () => {
   try {
     await prisma.$connect();
     console.log("Connected to the database successfully.");
-    await redisClient.connect();
-    console.log("Connected to Redis successfully.");
+  } catch (dbErr) {
+    console.error("Database connection warning:", dbErr);
+  }
 
-    // Create HTTP server wrapping Express app
-    const httpServer = http.createServer(app);
-
-    // Initialize Real-Time WebSockets engine
-    initSocket(httpServer);
-    console.log("Real-time WebSockets (Socket.io) engine initialized.");
-
-    // Initialize Automated Background Cron Engine
-    initCronJobs();
-
-    httpServer.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error("Error starting the server:", error);
-    await prisma.$disconnect();
-    process.exit(1);
+  try {
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+      console.log("Connected to Redis successfully.");
+    }
+  } catch (redisErr) {
+    console.warn("Redis connection notice (continuing without cache):", redisErr);
   }
 };
 
-main();
+// Initialize DB and background services
+initServices();
+
+// Only start long-running HTTP listener & Cron when NOT running on Vercel Serverless
+if (!process.env.VERCEL) {
+  const httpServer = http.createServer(app);
+  initSocket(httpServer);
+  console.log("Real-time WebSockets (Socket.io) engine initialized.");
+
+  initCronJobs();
+  console.log("Automated Background Cron Engine initialized.");
+
+  httpServer.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+export default app;
