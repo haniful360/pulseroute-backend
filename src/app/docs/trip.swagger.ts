@@ -242,7 +242,8 @@ export const tripPaths = {
         {
           name: "status",
           in: "query",
-          description: "Filter by offer status (PENDING, ACCEPTED, REJECTED, EXPIRED, or ALL)",
+          description:
+            "Filter by offer status (PENDING, ACCEPTED, REJECTED, EXPIRED, or ALL)",
           schema: {
             type: "string",
             enum: ["PENDING", "ACCEPTED", "REJECTED", "EXPIRED", "ALL"],
@@ -252,7 +253,8 @@ export const tripPaths = {
         {
           name: "includeExpired",
           in: "query",
-          description: "Set to 'true' to include expired pending offers for testing",
+          description:
+            "Set to 'true' to include expired pending offers for testing",
           schema: {
             type: "string",
             enum: ["true", "false"],

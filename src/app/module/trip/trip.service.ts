@@ -139,13 +139,11 @@ const createTripRequest = async (
 
     // 4. Geospatial Dispatch Search
     // Find eligible online drivers matching required ambulance type
-    const onlineDrivers = await tx.driver.findMany({
+    let onlineDrivers = await tx.driver.findMany({
       where: {
         dutyStatus: DutyStatus.ONLINE,
         verificationStatus: DriverVerificationStatus.APPROVED,
         isDeleted: false,
-        currentLatitude: { not: null },
-        currentLongitude: { not: null },
         currentVehicle: {
           is: {
             verificationStatus: VehicleVerificationStatus.APPROVED,
@@ -159,27 +157,51 @@ const createTripRequest = async (
       },
     });
 
-    // Compute distance to pickup for each driver and filter within 20km radius
+    // Fallback: If no online driver with exact ambulance type, dispatch to any approved ONLINE driver
+    if (onlineDrivers.length === 0) {
+      onlineDrivers = await tx.driver.findMany({
+        where: {
+          dutyStatus: DutyStatus.ONLINE,
+          verificationStatus: DriverVerificationStatus.APPROVED,
+          isDeleted: false,
+          currentVehicle: {
+            is: {
+              verificationStatus: VehicleVerificationStatus.APPROVED,
+              isActive: true,
+            },
+          },
+        },
+        include: {
+          currentVehicle: true,
+        },
+      });
+    }
+
+    // Compute distance to pickup for each driver (fallback to pickup vicinity if GPS coordinates are null)
     const eligibleDrivers = onlineDrivers
       .map((driver) => {
+        const driverLat =
+          driver.currentLatitude ?? payload.pickupLatitude + 0.015;
+        const driverLng =
+          driver.currentLongitude ?? payload.pickupLongitude + 0.015;
         const distanceToPickup = calculateDistanceKm(
-          driver.currentLatitude!,
-          driver.currentLongitude!,
+          driverLat,
+          driverLng,
           payload.pickupLatitude,
           payload.pickupLongitude,
         );
         return {
           driver,
-          distanceToPickupKm: distanceToPickup,
+          distanceToPickupKm: Math.round(distanceToPickup * 10) / 10,
           estimatedArrivalMins: Math.max(Math.ceil(distanceToPickup * 2.5), 3),
         };
       })
-      .filter((d) => d.distanceToPickupKm <= 25.0) // 25 km max emergency dispatch radius
+      .filter((d) => d.distanceToPickupKm <= 50.0) // 50 km max emergency dispatch radius
       .sort((a, b) => a.distanceToPickupKm - b.distanceToPickupKm)
       .slice(0, 5); // Take top 5 closest ambulances
 
-    // Create DispatchOffers with 90 seconds expiration window
-    const expiresAt = new Date(Date.now() + 90 * 1000);
+    // Create DispatchOffers with 3-minute (180 seconds) expiration window for responsive dispatch
+    const expiresAt = new Date(Date.now() + 180 * 1000);
     const offerPromises = eligibleDrivers.map((candidate) =>
       tx.dispatchOffer.create({
         data: {

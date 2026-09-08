@@ -144,6 +144,122 @@ async function main() {
   }
   console.log("✅ System settings seeded.");
 
+  // 4. Seed Verified Active Test Driver
+  const driverEmail = "kamal.driver@example.com";
+  const driverPassword = "password123";
+  const existingDriverUser = await prisma.user.findUnique({
+    where: { email: driverEmail },
+  });
+
+  if (!existingDriverUser) {
+    const hashedPassword = await bcrypt.hash(driverPassword, 10);
+    const driverUser = await prisma.user.create({
+      data: {
+        name: "Kamal Hossain",
+        email: driverEmail,
+        password: hashedPassword,
+        phone: "+8801811223344",
+        role: Role.DRIVER,
+        status: UserStatus.ACTIVE,
+        emailVerified: true,
+      },
+    });
+
+    const driver = await prisma.driver.create({
+      data: {
+        userId: driverUser.id,
+        name: "Kamal Hossain",
+        email: driverEmail,
+        contactNumber: "+8801811223344",
+        licenseNumber: "DL-DHAKA-2024-9988",
+        licenseExpiry: new Date("2028-12-31"),
+        experienceYears: 6,
+        verificationStatus: "APPROVED",
+        dutyStatus: "ONLINE",
+        currentLatitude: 23.7465,
+        currentLongitude: 90.3752,
+        rating: 4.9,
+      },
+    });
+
+    const vehicle = await prisma.vehicle.create({
+      data: {
+        driverId: driver.id,
+        vehicleNumber: "DHAKA-METRO-CHA-11-2233",
+        ambulanceType: AmbulanceType.ICU,
+        model: "Toyota HiAce Grandia Ambulance",
+        manufacturer: "Toyota",
+        year: 2023,
+        hasOxygen: true,
+        hasVentilator: true,
+        hasDefibrillator: true,
+        hasSuctionMachine: true,
+        verificationStatus: "APPROVED",
+        isActive: true,
+      },
+    });
+
+    await prisma.driver.update({
+      where: { id: driver.id },
+      data: { currentVehicleId: vehicle.id },
+    });
+
+    await prisma.driverWallet.create({
+      data: {
+        driverId: driver.id,
+        balance: 15000.0,
+        currency: "BDT",
+      },
+    });
+
+    console.log(`✅ Approved test Driver seeded: ${driverEmail} (Password: ${driverPassword})`);
+  } else {
+    // Ensure existing test driver is online and approved
+    await prisma.driver.updateMany({
+      where: { email: driverEmail },
+      data: {
+        verificationStatus: "APPROVED",
+        dutyStatus: "ONLINE",
+        currentLatitude: 23.7465,
+        currentLongitude: 90.3752,
+      },
+    });
+    console.log(`ℹ️ Test Driver updated to APPROVED and ONLINE: ${driverEmail}`);
+  }
+
+  // 5. Seed Test Patient User
+  const patientEmail = "patient@pulseroute.com";
+  const patientPassword = "password123";
+  const existingPatient = await prisma.user.findUnique({
+    where: { email: patientEmail },
+  });
+
+  if (!existingPatient) {
+    const hashedPassword = await bcrypt.hash(patientPassword, 10);
+    await prisma.user.create({
+      data: {
+        name: "Rahim Ahmed",
+        email: patientEmail,
+        password: hashedPassword,
+        phone: "+8801711223344",
+        role: Role.USER,
+        status: UserStatus.ACTIVE,
+        emailVerified: true,
+        patient: {
+          create: {
+            name: "Rahim Ahmed",
+            email: patientEmail,
+            contactNumber: "+8801711223344",
+            address: "House 12, Road 5, Dhanmondi, Dhaka",
+            emergencyContactNumber: "+8801711223355",
+            bloodGroup: "O+",
+          },
+        },
+      },
+    });
+    console.log(`✅ Test Patient seeded: ${patientEmail} (Password: ${patientPassword})`);
+  }
+
   console.log("🎉 Database seeding completed successfully!");
 }
 
