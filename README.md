@@ -11,25 +11,23 @@
 
 ## 📌 Project Quick Links & Information
 
-| Property | Details / Link |
-| :--- | :--- |
-| **Project Name** | **PulseRoute — Emergency Ambulance Dispatch Platform** |
-| **Backend Repository** | [https://github.com/haniful360/pulseroute-backend](https://github.com/haniful360/pulseroute-backend) |
-| **Live Production API** | [https://pulseroute-backend.vercel.app](https://pulseroute-backend.vercel.app) |
-| **Interactive API Docs** | [https://pulseroute-backend.vercel.app/api-docs](https://pulseroute-backend.vercel.app/api-docs) |
-| **Project Demo Video** | [Watch Video Walkthrough (Google Drive)](https://drive.google.com/file/d/11nyfpwiG_Efn5ZrovSw8kIEUC2KTHEpY/view?usp=sharing) |
+| Property                 | Details / Link                                                                                                               |
+| :----------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **Project Name**         | **PulseRoute — Emergency Ambulance Dispatch Platform**                                                                       |
+| **Backend Repository**   | [https://github.com/haniful360/pulseroute-backend](https://github.com/haniful360/pulseroute-backend)                         |
+| **Live Production API**  | [https://pulseroute-backend.vercel.app](https://pulseroute-backend.vercel.app)                                               |
+| **Interactive API Docs** | [https://pulseroute-backend.vercel.app/api-docs](https://pulseroute-backend.vercel.app/api-docs)                             |
+| **Project Demo Video**   | [Watch Video Walkthrough (Google Drive)](https://drive.google.com/file/d/11nyfpwiG_Efn5ZrovSw8kIEUC2KTHEpY/view?usp=sharing) |
 
 ---
 
 ## 🔐 Default Demo & Testing Credentials
 
-Use these pre-seeded accounts to explore different roles and permissions in Swagger UI or Postman:
+Use these pre-seeded administrator credentials to explore the platform:
 
 | Role | Email | Password | Access Privileges |
 | :--- | :--- | :--- | :--- |
 | **Super Admin** | `haniful@gmail.com` | `haniful123` | Full admin control, driver/vehicle verification, platform commission & pricing configs, financial ledgers |
-| **Approved Driver (Online)** | `kamal.driver@example.com` | `password123` | Online duty toggle, live GPS dispatch acceptance, trip status progression, wallet earnings |
-| **Verified Patient / User** | `patient@pulseroute.com` | `password123` | Emergency trip booking, live tracking, Stripe payment intent creation, review submission |
 
 ---
 
@@ -63,7 +61,9 @@ Use these pre-seeded accounts to explore different roles and permissions in Swag
 ## 🚀 Step-by-Step Local Setup & Run Guide
 
 ### 1. Prerequisites
+
 Ensure you have the following installed on your machine:
+
 - **Node.js**: v20.x or v22.x+ ([Download Node.js](https://nodejs.org/))
 - **pnpm**: v9+ (Run `npm install -g pnpm` or `corepack enable`)
 - **PostgreSQL Database**: Local or Cloud instance (Neon, Supabase, Aiven, or Railway)
@@ -72,6 +72,7 @@ Ensure you have the following installed on your machine:
 ---
 
 ### 2. Clone the Repository
+
 ```bash
 git clone https://github.com/haniful360/pulseroute-backend.git
 cd pulseroute-backend
@@ -80,6 +81,7 @@ cd pulseroute-backend
 ---
 
 ### 3. Install Dependencies
+
 ```bash
 pnpm install
 ```
@@ -87,12 +89,15 @@ pnpm install
 ---
 
 ### 4. Configure Environment Variables
+
 Copy the example environment file and fill in your credentials:
+
 ```bash
 cp .env.example .env
 ```
 
 Open `.env` and verify your configuration:
+
 ```env
 NODE_ENV=development
 PORT=5000
@@ -141,6 +146,7 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 ---
 
 ### 5. Generate Prisma Client & Run Migrations
+
 ```bash
 # Generate Prisma Client
 pnpm prisma generate
@@ -152,25 +158,29 @@ pnpm prisma db push
 ---
 
 ### 6. Seed Database with Super Admin, Pricing & Test Accounts
+
 ```bash
 pnpm seed
 ```
+
 > **What this does:**
+>
 > - Creates default **Super Admin** (`haniful@gmail.com` / `haniful123`)
 > - Seeds baseline **Ambulance Pricing Configurations** for all 6 vehicle types (`BASIC`, `AC`, `ICU`, `CCU`, `FREEZER`, `NEONATAL`)
-> - Seeds verified online **Test Driver** (`kamal.driver@example.com` / `password123`)
-> - Seeds verified **Test Patient** (`patient@pulseroute.com` / `password123`)
+> - Seeds default platform system settings and search configurations
 
 ---
 
 ### 7. Run the Application
 
 #### Development Mode (with hot-reload):
+
 ```bash
 pnpm dev
 ```
 
 #### Production Build & Start:
+
 ```bash
 pnpm build
 pnpm start
@@ -193,27 +203,27 @@ You can authorize requests directly by clicking the **Authorize 🔓** button an
 
 ## 📡 Core API Endpoints Overview
 
-| Module | Method & Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| **Auth** | `POST /api/v1/auth/register` | Public | Patient registration (Sends 6-digit OTP) |
-| **Auth** | `POST /api/v1/auth/register-driver` | Public | Driver registration with license & vehicle upload |
-| **Auth** | `POST /api/v1/auth/verify-otp` | Public | Verify OTP & activate account |
-| **Auth** | `POST /api/v1/auth/login` | Public | Universal login for User, Driver & Admin |
-| **Auth** | `POST /api/v1/auth/google-login` | Public | Google OAuth 2.0 Sign-In |
-| **Auth** | `POST /api/v1/auth/forgot-password` | Public | Request password reset OTP |
-| **Auth** | `POST /api/v1/auth/reset-password` | Public | Reset password with OTP |
-| **Drivers** | `PATCH /api/v1/drivers/duty-status` | Driver | Toggle `ONLINE` / `OFFLINE` status |
-| **Drivers** | `PATCH /api/v1/drivers/location` | Driver | Update live GPS coordinates (`lat`, `lng`) |
-| **Trips** | `POST /api/v1/trips` | User / Admin | Request an emergency ambulance dispatch |
-| **Trips** | `GET /api/v1/trips/offers/my-offers` | Driver | Fetch active pending dispatch offers |
-| **Trips** | `PATCH /api/v1/trips/offers/:id/accept` | Driver | Accept emergency dispatch offer |
-| **Trips** | `PATCH /api/v1/trips/:id/status` | Driver | Update status: `EN_ROUTE` ➔ `ARRIVED` ➔ `IN_TRANSIT` ➔ `COMPLETED` |
-| **Payments** | `POST /api/v1/payments/create-intent` | User / Admin | Create Stripe Cashless Payment Intent |
-| **Payments** | `POST /api/v1/payments/confirm` | User / Admin | Confirm payment and settle invoice |
-| **Wallets** | `GET /api/v1/wallets/my-wallet` | Driver | View driver balance & earnings breakdown |
-| **Wallets** | `POST /api/v1/wallets/payout-request` | Driver | Request wallet withdrawal |
-| **Reviews** | `POST /api/v1/reviews` | User | Submit rating & review for completed trip |
-| **Analytics**| `GET /api/v1/analytics/overview` | Admin | System dashboard metrics & fleet utilization |
+| Module        | Method & Endpoint                       | Access       | Description                                                        |
+| :------------ | :-------------------------------------- | :----------- | :----------------------------------------------------------------- |
+| **Auth**      | `POST /api/v1/auth/register`            | Public       | Patient registration (Sends 6-digit OTP)                           |
+| **Auth**      | `POST /api/v1/auth/register-driver`     | Public       | Driver registration with license & vehicle upload                  |
+| **Auth**      | `POST /api/v1/auth/verify-otp`          | Public       | Verify OTP & activate account                                      |
+| **Auth**      | `POST /api/v1/auth/login`               | Public       | Universal login for User, Driver & Admin                           |
+| **Auth**      | `POST /api/v1/auth/google-login`        | Public       | Google OAuth 2.0 Sign-In                                           |
+| **Auth**      | `POST /api/v1/auth/forgot-password`     | Public       | Request password reset OTP                                         |
+| **Auth**      | `POST /api/v1/auth/reset-password`      | Public       | Reset password with OTP                                            |
+| **Drivers**   | `PATCH /api/v1/drivers/duty-status`     | Driver       | Toggle `ONLINE` / `OFFLINE` status                                 |
+| **Drivers**   | `PATCH /api/v1/drivers/location`        | Driver       | Update live GPS coordinates (`lat`, `lng`)                         |
+| **Trips**     | `POST /api/v1/trips`                    | User / Admin | Request an emergency ambulance dispatch                            |
+| **Trips**     | `GET /api/v1/trips/offers/my-offers`    | Driver       | Fetch active pending dispatch offers                               |
+| **Trips**     | `PATCH /api/v1/trips/offers/:id/accept` | Driver       | Accept emergency dispatch offer                                    |
+| **Trips**     | `PATCH /api/v1/trips/:id/status`        | Driver       | Update status: `EN_ROUTE` ➔ `ARRIVED` ➔ `IN_TRANSIT` ➔ `COMPLETED` |
+| **Payments**  | `POST /api/v1/payments/create-intent`   | User / Admin | Create Stripe Cashless Payment Intent                              |
+| **Payments**  | `POST /api/v1/payments/confirm`         | User / Admin | Confirm payment and settle invoice                                 |
+| **Wallets**   | `GET /api/v1/wallets/my-wallet`         | Driver       | View driver balance & earnings breakdown                           |
+| **Wallets**   | `POST /api/v1/wallets/payout-request`   | Driver       | Request wallet withdrawal                                          |
+| **Reviews**   | `POST /api/v1/reviews`                  | User         | Submit rating & review for completed trip                          |
+| **Analytics** | `GET /api/v1/analytics/overview`        | Admin        | System dashboard metrics & fleet utilization                       |
 
 ---
 
@@ -222,11 +232,11 @@ You can authorize requests directly by clicking the **Authorize 🔓** button an
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Driver as 🚑 Driver (kamal.driver@example.com)
-    actor Patient as 🧑‍💼 Patient (patient@pulseroute.com)
+    actor Driver as 🚑 Driver
+    actor Patient as 🧑‍💼 Patient
     participant API as 🌐 PulseRoute API
 
-    Driver->>API: 1. Login (POST /api/v1/auth/login)
+    Driver->>API: 1. Register / Login (POST /api/v1/auth/login)
     Driver->>API: 2. Set Duty ONLINE (PATCH /api/v1/drivers/duty-status)
     Patient->>API: 3. Request Ambulance (POST /api/v1/trips)
     Driver->>API: 4. View Offer (GET /api/v1/trips/offers/my-offers)
@@ -235,9 +245,9 @@ sequenceDiagram
     Patient->>API: 7. Pay via Stripe (POST /api/v1/payments/create-intent)
 ```
 
-1. **Log in as Driver**: `kamal.driver@example.com` / `password123` via `POST /api/v1/auth/login`.
+1. **Log in as Driver**: Register via `POST /api/v1/auth/register-driver` or log in via `POST /api/v1/auth/login`.
 2. **Set Duty ONLINE**: `PATCH /api/v1/drivers/duty-status` with `{"dutyStatus": "ONLINE"}`.
-3. **Log in as Patient**: `patient@pulseroute.com` / `password123` and send `POST /api/v1/trips` with pickup coordinates.
+3. **Log in as Patient**: Register via `POST /api/v1/auth/register` and send `POST /api/v1/trips` with pickup coordinates.
 4. **Fetch & Accept Offer**: Under Driver token, call `GET /api/v1/trips/offers/my-offers` and `PATCH /api/v1/trips/offers/:offerId/accept`.
 5. **Complete & Settle**: Progress the trip status to `COMPLETED` and confirm payment via Stripe.
 
