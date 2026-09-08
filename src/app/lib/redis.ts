@@ -15,8 +15,3 @@ export const redisClient = config.redis_url
 redisClient.on("error", (err) => {
   console.warn("Redis Client Notification:", err?.message || err);
 });
-
-
-
-
-

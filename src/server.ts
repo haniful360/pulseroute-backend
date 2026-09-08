@@ -22,7 +22,10 @@ const initServices = async () => {
       console.log("Connected to Redis successfully.");
     }
   } catch (redisErr) {
-    console.warn("Redis connection notice (continuing without cache):", redisErr);
+    console.warn(
+      "Redis connection notice (continuing without cache):",
+      redisErr,
+    );
   }
 };
 
