@@ -529,7 +529,7 @@ CREATE INDEX "idx_review_driverId" ON "reviews" ("driverId");
 CREATE INDEX "idx_review_rating" ON "reviews" ("rating");
 
 -- =============================================================================
--- 11. NOTIFICATIONS & SYSTEM CONFIGURATION
+-- 10. NOTIFICATIONS & SYSTEM CONFIGURATION
 -- =============================================================================
 
 CREATE TABLE "notifications" (
