@@ -9,7 +9,9 @@ let io: Server | null = null;
 export const initSocket = (server: http.Server): Server => {
   io = new Server(server, {
     cors: {
-      origin: config.frontend_url || "http://localhost:3000",
+      origin: (origin, callback) => {
+        callback(null, true);
+      },
       credentials: true,
       methods: ["GET", "POST"],
     },

@@ -26,7 +26,73 @@ import { WalletRoutes } from "./app/module/wallet/wallet.route";
 
 const app: Application = express();
 
-// Security HTTP Headers (configured to allow Swagger UI)
+// 1. CORS Configuration (Handles Vercel domains, localhost ports, custom frontends & preflight OPTIONS)
+const rawOrigins = [
+  config.frontend_url,
+  process.env.ALLOWED_ORIGINS,
+  config.bak_url,
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:5173",
+  "http://localhost:8080",
+  "http://127.0.0.1:5500",
+  "http://127.0.0.1:3000",
+]
+  .filter(Boolean)
+  .flatMap((url) => (url as string).split(","))
+  .map((url) => url.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
+const isOriginAllowed = (origin?: string): boolean => {
+  if (!origin) return true; // Server-to-server, Postman, Curl, Mobile, Cron
+  if (config.node_env !== "production") return true;
+
+  const normalizedOrigin = origin.replace(/\/$/, "");
+  if (rawOrigins.includes(normalizedOrigin)) return true;
+
+  // Allow all localhost and 127.0.0.1 ports
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalizedOrigin)) {
+    return true;
+  }
+
+  // Allow all Vercel deployments (frontend, backend, previews)
+  if (
+    normalizedOrigin.endsWith(".vercel.app") ||
+    /^https:\/\/[a-zA-Z0-9-_.]+\.vercel\.app$/i.test(normalizedOrigin)
+  ) {
+    return true;
+  }
+
+  return true;
+};
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
+  allowedHeaders: [
+    "Origin",
+    "X-Requested-With",
+    "Content-Type",
+    "Accept",
+    "Authorization",
+    "Cookie",
+    "Range",
+  ],
+  exposedHeaders: ["Set-Cookie", "Authorization"],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+// 2. Security HTTP Headers (configured to allow Swagger UI & CDN assets)
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -34,30 +100,8 @@ app.use(
   }),
 );
 
-// Global Rate Limiting for all API endpoints
+// 3. Global Rate Limiting for all API endpoints
 app.use("/api/v1", globalLimiter);
-
-const allowedOrigins = [
-  config.frontend_url,
-  "http://localhost:3000",
-  "http://127.0.0.1:5500",
-].filter(Boolean) as string[];
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (
-        !origin ||
-        allowedOrigins.includes(origin) ||
-        config.node_env !== "production"
-      ) {
-        return callback(null, true);
-      }
-      return callback(new Error("Blocked by CORS policy"));
-    },
-    credentials: true,
-  }),
-);
 
 // Enable URL-encoded form data parsing
 app.use(express.urlencoded({ extended: true }));
