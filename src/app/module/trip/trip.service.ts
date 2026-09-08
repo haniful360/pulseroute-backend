@@ -240,7 +240,7 @@ const createTripRequest = async (
 
 const getMyOffers = async (
   authUser: IRequestUser,
-  _filter?: { status?: OfferStatus },
+  filter?: { status?: string; includeExpired?: string },
 ) => {
   const driver = await prisma.driver.findUnique({
     where: { userId: authUser.userId },
@@ -250,15 +250,30 @@ const getMyOffers = async (
     throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
   }
 
-  // Find all active, non-expired pending offers for this driver
+  const whereCondition: any = {
+    driverId: driver.id,
+  };
+
+  // If specific status is provided (e.g. ACCEPTED, REJECTED, EXPIRED, PENDING)
+  if (filter?.status && filter.status !== "ALL") {
+    whereCondition.status = filter.status as OfferStatus;
+  } else if (!filter?.status) {
+    // Default to PENDING
+    whereCondition.status = OfferStatus.PENDING;
+  }
+
+  // Filter out expired offers for pending unless includeExpired=true
+  if (
+    whereCondition.status === OfferStatus.PENDING &&
+    filter?.includeExpired !== "true"
+  ) {
+    whereCondition.expiresAt = {
+      gt: new Date(),
+    };
+  }
+
   const offers = await prisma.dispatchOffer.findMany({
-    where: {
-      driverId: driver.id,
-      status: OfferStatus.PENDING,
-      expiresAt: {
-        gt: new Date(),
-      },
-    },
+    where: whereCondition,
     include: {
       trip: {
         include: {

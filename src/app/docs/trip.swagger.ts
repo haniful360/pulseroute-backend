@@ -236,8 +236,30 @@ export const tripPaths = {
       tags: ["Driver Dispatch Offers"],
       summary: "Get Active Dispatch Offers (Driver Only)",
       description:
-        "Fetches non-expired pending emergency dispatch offers broadcast to the authenticated driver.",
+        "Fetches pending emergency dispatch offers broadcast to the authenticated driver. Supports filtering by status or including expired offers.",
       security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "status",
+          in: "query",
+          description: "Filter by offer status (PENDING, ACCEPTED, REJECTED, EXPIRED, or ALL)",
+          schema: {
+            type: "string",
+            enum: ["PENDING", "ACCEPTED", "REJECTED", "EXPIRED", "ALL"],
+            default: "PENDING",
+          },
+        },
+        {
+          name: "includeExpired",
+          in: "query",
+          description: "Set to 'true' to include expired pending offers for testing",
+          schema: {
+            type: "string",
+            enum: ["true", "false"],
+            default: "false",
+          },
+        },
+      ],
       responses: {
         200: {
           description: "Active offers retrieved successfully",
