@@ -97,8 +97,7 @@ CREATE TYPE "PaymentStatus" AS ENUM (
 );
 
 CREATE TYPE "PaymentMethod" AS ENUM (
-  'STRIPE',
-  'CASH'
+  'STRIPE'
 );
 
 CREATE TYPE "TransactionType" AS ENUM (

@@ -21,18 +21,7 @@ const generateInvoiceForTrip = catchAsync(
   },
 );
 
-const payInvoice = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as IRequestUser;
-  const { id } = req.params;
-  const result = await InvoiceService.payInvoice(user, id as string, req.body);
 
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Invoice payment recorded successfully. Driver wallet updated.",
-    data: result,
-  });
-});
 
 const getInvoiceById = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
@@ -97,7 +86,6 @@ const exportInvoiceReceipt = catchAsync(async (req: Request, res: Response) => {
 
 export const InvoiceController = {
   generateInvoiceForTrip,
-  payInvoice,
   getInvoiceById,
   getMyInvoices,
   getAllInvoices,

@@ -8,8 +8,7 @@ import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import { buildCsv } from "../../utils/csvHelper";
 import { IRequestUser } from "../auth/auth.interface";
-import { WalletService } from "../wallet/wallet.service";
-import { IInvoiceFilterRequest, IPayInvoicePayload } from "./invoice.interface";
+import { IInvoiceFilterRequest } from "./invoice.interface";
 
 // Generates human-readable invoice reference code (e.g. INV-20260903-XXXX)
 function generateInvoiceNumber(): string {
@@ -92,89 +91,7 @@ const generateInvoiceForTrip = async (tripId: string) => {
   return invoice;
 };
 
-const payInvoice = async (
-  authUser: IRequestUser,
-  invoiceId: string,
-  payload: IPayInvoicePayload,
-) => {
-  const invoice = await prisma.invoice.findUnique({
-    where: { id: invoiceId },
-    include: { trip: true },
-  });
 
-  if (!invoice) {
-    throw new AppError(httpStatus.NOT_FOUND, "Invoice not found");
-  }
-
-  if (invoice.paymentStatus === PaymentStatus.PAID) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "This invoice has already been settled and marked as PAID.",
-    );
-  }
-
-  // Permission: Patient of invoice, Driver of invoice, or Admin can confirm settlement
-  if (authUser.role === Role.USER) {
-    const patient = await prisma.patient.findUnique({
-      where: { userId: authUser.userId },
-    });
-    if (!patient || patient.id !== invoice.patientId) {
-      throw new AppError(
-        httpStatus.FORBIDDEN,
-        "You do not have authorization to settle this invoice",
-      );
-    }
-  } else if (authUser.role === Role.DRIVER) {
-    const driver = await prisma.driver.findUnique({
-      where: { userId: authUser.userId },
-    });
-    if (!driver || driver.id !== invoice.driverId) {
-      throw new AppError(
-        httpStatus.FORBIDDEN,
-        "You do not have authorization to settle this invoice",
-      );
-    }
-  }
-
-  const paidAmount = payload.paidAmount || Number(invoice.totalAmount);
-  const now = new Date();
-
-  const updatedInvoice = await prisma.$transaction(async (tx) => {
-    // 1. Update Invoice Status
-    const settled = await tx.invoice.update({
-      where: { id: invoice.id },
-      data: {
-        paymentStatus: PaymentStatus.PAID,
-        paymentMethod: payload.paymentMethod,
-        paidAmount,
-        paidAt: now,
-      },
-      include: {
-        paymentRecords: true,
-      },
-    });
-
-    // 2. Create Payment Record
-    await tx.paymentRecord.create({
-      data: {
-        invoiceId: invoice.id,
-        amount: paidAmount,
-        paymentMethod: payload.paymentMethod,
-        status: PaymentStatus.PAID,
-        paymentGateway: payload.paymentGateway || "STRIPE",
-        gatewayTransactionId: payload.gatewayTransactionId,
-        paidAt: now,
-      },
-    });
-
-    // 3. Trigger Driver Wallet Accounting
-    await WalletService.processTripPayment(tx, settled);
-
-    return settled;
-  });
-
-  return updatedInvoice;
-};
 
 const getInvoiceById = async (authUser: IRequestUser, id: string) => {
   const invoice = await prisma.invoice.findUnique({
@@ -477,7 +394,6 @@ const exportInvoiceReceipt = async (
 
 export const InvoiceService = {
   generateInvoiceForTrip,
-  payInvoice,
   getInvoiceById,
   getMyInvoices,
   getAllInvoices,

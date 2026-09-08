@@ -1,32 +1,4 @@
 export const invoiceSchemas = {
-  PayInvoiceRequest: {
-    type: "object",
-    required: ["paymentMethod"],
-    properties: {
-      paymentMethod: {
-        type: "string",
-        enum: ["STRIPE"],
-        example: "STRIPE",
-        description: "Online cashless payment settlement via Stripe.",
-      },
-      paidAmount: {
-        type: "number",
-        example: 2500.0,
-        description: "Amount paid. Defaults to full invoice total if omitted.",
-      },
-      gatewayTransactionId: {
-        type: "string",
-        example: "ch_3Mtwx1LkdIwHu7ix0snNq8GS",
-        description:
-          "Transaction / PaymentIntent ID returned from Stripe after checkout.",
-      },
-      paymentGateway: {
-        type: "string",
-        example: "STRIPE",
-        description: "Payment gateway provider (STRIPE).",
-      },
-    },
-  },
   InvoiceResponse: {
     type: "object",
     properties: {
@@ -206,41 +178,6 @@ export const invoicePaths = {
           content: {
             "application/json": {
               schema: { $ref: "#/components/schemas/StandardErrorResponse" },
-            },
-          },
-        },
-      },
-    },
-  },
-  "/api/v1/invoices/{id}/pay": {
-    patch: {
-      tags: ["Invoices & Billing"],
-      summary: "Settle / Pay Invoice",
-      description:
-        "Marks invoice as PAID and triggers automatic double-entry wallet accounting (credits driver earnings or deducts cash commission).",
-      security: [{ bearerAuth: [] }],
-      parameters: [
-        {
-          name: "id",
-          in: "path",
-          required: true,
-          schema: { type: "string" },
-        },
-      ],
-      requestBody: {
-        required: true,
-        content: {
-          "application/json": {
-            schema: { $ref: "#/components/schemas/PayInvoiceRequest" },
-          },
-        },
-      },
-      responses: {
-        200: {
-          description: "Invoice settled and wallet accounting completed",
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/InvoiceResponse" },
             },
           },
         },

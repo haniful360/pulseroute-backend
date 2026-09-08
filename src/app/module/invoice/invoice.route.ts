@@ -1,9 +1,7 @@
 import { Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
-import { validateRequest } from "../../middleware/validateRequest";
 import { InvoiceController } from "./invoice.controller";
-import { InvoiceValidation } from "./invoice.validation";
 
 const router = Router();
 
@@ -40,13 +38,6 @@ router.get(
   "/:id",
   auth(Role.USER, Role.DRIVER, Role.SUPER_ADMIN),
   InvoiceController.getInvoiceById,
-);
-
-router.patch(
-  "/:id/pay",
-  auth(Role.USER, Role.DRIVER, Role.SUPER_ADMIN),
-  validateRequest(InvoiceValidation.payInvoiceSchema),
-  InvoiceController.payInvoice,
 );
 
 export const InvoiceRoutes = router;
