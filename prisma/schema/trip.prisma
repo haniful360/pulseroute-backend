@@ -41,7 +41,6 @@ model Trip {
   invoice            Invoice?
   review             Review?
   walletTransactions WalletTransaction[]
-  preAlerts          HospitalPreAlert[]
 
   @@index([patientId], name: "idx_trip_patientId")
   @@index([driverId], name: "idx_trip_driverId")

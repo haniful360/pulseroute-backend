@@ -136,14 +136,6 @@ CREATE TYPE "NotificationType" AS ENUM (
   'SYSTEM'
 );
 
-CREATE TYPE "AlertStatus" AS ENUM (
-  'ALERTED',
-  'ACKNOWLEDGED',
-  'PREPARING_BAY',
-  'PATIENT_ARRIVED',
-  'CANCELLED'
-);
-
 -- =============================================================================
 -- 2. CORE USERS & AUTHENTICATION
 -- =============================================================================
@@ -518,58 +510,7 @@ CREATE INDEX "idx_payout_walletId" ON "payout_requests" ("walletId");
 CREATE INDEX "idx_payout_status" ON "payout_requests" ("status");
 
 -- =============================================================================
--- 9. HOSPITAL EMERGENCY DISPATCH & PRE-ALERTS
--- =============================================================================
-
-CREATE TABLE "hospitals" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "name" VARCHAR(255) NOT NULL,
-  "branch" VARCHAR(255),
-  "address" TEXT NOT NULL,
-  "emergencyPhone" VARCHAR(50) NOT NULL,
-  "emergencyEmail" VARCHAR(255),
-  "latitude" DOUBLE PRECISION NOT NULL,
-  "longitude" DOUBLE PRECISION NOT NULL,
-  "hasICU" BOOLEAN NOT NULL DEFAULT true,
-  "hasNICU" BOOLEAN NOT NULL DEFAULT false,
-  "hasTraumaCenter" BOOLEAN NOT NULL DEFAULT true,
-  "hasBloodBank" BOOLEAN NOT NULL DEFAULT true,
-  "totalBeds" INTEGER NOT NULL DEFAULT 50,
-  "availableBeds" INTEGER NOT NULL DEFAULT 10,
-  "isActive" BOOLEAN NOT NULL DEFAULT true,
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX "idx_hospital_location" ON "hospitals" ("latitude", "longitude");
-
-CREATE TABLE "hospital_pre_alerts" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "trackingToken" VARCHAR(255) NOT NULL UNIQUE DEFAULT gen_random_uuid()::text,
-  "tripId" UUID NOT NULL REFERENCES "trips"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  "hospitalId" UUID NOT NULL REFERENCES "hospitals"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  "patientName" VARCHAR(255) NOT NULL,
-  "patientAge" INTEGER,
-  "patientGender" VARCHAR(50),
-  "bloodGroup" VARCHAR(10),
-  "medicalCondition" TEXT,
-  "allergies" TEXT,
-  "vitalsSummary" TEXT,
-  "estimatedArrivalMins" INTEGER,
-  "assignedBayNumber" VARCHAR(50),
-  "status" "AlertStatus" NOT NULL DEFAULT 'ALERTED',
-  "acknowledgedAt" TIMESTAMP WITH TIME ZONE,
-  "acknowledgedBy" VARCHAR(255),
-  "notes" TEXT,
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX "idx_prealert_hospital_status" ON "hospital_pre_alerts" ("hospitalId", "status");
-CREATE INDEX "idx_prealert_tracking_token" ON "hospital_pre_alerts" ("trackingToken");
-
--- =============================================================================
--- 10. REVIEWS & RATINGS
+-- 9. REVIEWS & RATINGS
 -- =============================================================================
 
 CREATE TABLE "reviews" (
