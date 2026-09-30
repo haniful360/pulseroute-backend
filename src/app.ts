@@ -102,11 +102,11 @@ app.use(
 // 3. Global Rate Limiting for all API endpoints
 app.use("/api/v1", globalLimiter);
 
-// Enable URL-encoded form data parsing
-app.use(express.urlencoded({ extended: true }));
+// Enable URL-encoded form data parsing with 50mb limit
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-// Middleware to parse JSON bodies & cookies
-app.use(express.json());
+// Middleware to parse JSON bodies & cookies with 50mb limit
+app.use(express.json({ limit: "50mb" }));
 app.use(cookieParser());
 
 // Interactive Swagger API Documentation (CDN Standalone + Fallback)
