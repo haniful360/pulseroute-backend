@@ -333,6 +333,50 @@ export const userPaths = {
     },
   },
   "/api/v1/users": {
+    post: {
+      tags: ["Users & Profile"],
+      summary: "Create or Invite User (Admin Only)",
+      description:
+        "Creates a new user directly (Admin, Driver, or Patient) with pre-activated status.",
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["name", "email", "role"],
+              properties: {
+                name: { type: "string", example: "Dr. Nazmul Huda" },
+                email: { type: "string", example: "nazmul@pulseroute.com" },
+                password: { type: "string", example: "Pulse@2025" },
+                role: {
+                  type: "string",
+                  enum: ["SUPER_ADMIN", "DRIVER", "USER"],
+                  example: "DRIVER",
+                },
+                contactNumber: { type: "string", example: "+8801712345678" },
+                status: {
+                  type: "string",
+                  enum: ["ACTIVE", "BLOCKED", "PENDING_APPROVAL"],
+                  example: "ACTIVE",
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: "User created successfully",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UserProfileResponse" },
+            },
+          },
+        },
+      },
+    },
     get: {
       tags: ["Users & Profile"],
       summary: "Get All Users (Admin Only)",

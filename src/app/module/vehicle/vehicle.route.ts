@@ -11,7 +11,7 @@ const router = Router();
 // Driver vehicle endpoints
 router.post(
   "/",
-  auth(Role.DRIVER),
+  auth(Role.DRIVER, Role.SUPER_ADMIN),
   upload.fields([
     { name: "photo", maxCount: 1 },
     { name: "photos", maxCount: 10 },

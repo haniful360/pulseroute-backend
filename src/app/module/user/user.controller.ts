@@ -110,7 +110,19 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.createUser(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "User created successfully",
+    data: result,
+  });
+});
+
 export const UserController = {
+  createUser,
   getMyProfile,
   getUserDashboardOverview,
   updateMyProfile,

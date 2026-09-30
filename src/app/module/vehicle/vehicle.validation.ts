@@ -13,6 +13,7 @@ const createVehicleSchema = z.object({
     AmbulanceType.FREEZER,
     AmbulanceType.NEONATAL,
   ]),
+  driverId: z.string().optional(),
   vehicleNumber: z
     .string({ message: "Vehicle registration number is required" })
     .min(3, "Vehicle number must be at least 3 characters"),

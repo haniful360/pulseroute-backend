@@ -183,4 +183,71 @@ export const notificationPaths = {
       },
     },
   },
+  "/api/v1/notifications/broadcast": {
+    post: {
+      tags: ["Fleet Announcements (Admin)"],
+      summary: "Broadcast Announcement or Emergency Advisory (Admin Only)",
+      description:
+        "Dispatches an emergency broadcast or fleet-wide announcement to all active drivers and/or users via real-time WebSocket socket.io and persists notification records.",
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["title", "message"],
+              properties: {
+                title: { type: "string", example: "Dhaka flood route advisory" },
+                message: {
+                  type: "string",
+                  example:
+                    "Avoid Mirpur-10 to Farmgate corridor due to waterlogging.",
+                },
+                targetAudience: {
+                  type: "string",
+                  enum: ["ALL", "DRIVERS", "USERS"],
+                  default: "ALL",
+                },
+                priority: {
+                  type: "string",
+                  enum: ["NORMAL", "URGENT", "CRITICAL"],
+                  default: "NORMAL",
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: "Announcement broadcasted successfully",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/StandardSuccessResponse" },
+            },
+          },
+        },
+      },
+    },
+  },
+  "/api/v1/notifications/broadcasts": {
+    get: {
+      tags: ["Fleet Announcements (Admin)"],
+      summary: "Get Past Broadcast Advisories (Admin Only)",
+      description:
+        "Retrieves historical distinct broadcast advisories sent across the emergency response network.",
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: "Broadcast advisories retrieved successfully",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/StandardSuccessResponse" },
+            },
+          },
+        },
+      },
+    },
+  },
 };

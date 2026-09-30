@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { VehicleVerificationStatus } from "../../../generated/prisma/enums";
+import { Role, VehicleVerificationStatus } from "../../../generated/prisma/enums";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import { IRequestUser } from "../auth/auth.interface";
@@ -12,14 +12,38 @@ import {
 
 const createVehicle = async (
   authUser: IRequestUser,
-  payload: ICreateVehiclePayload,
+  payload: ICreateVehiclePayload & { driverId?: string },
 ) => {
-  const driver = await prisma.driver.findUnique({
-    where: { userId: authUser.userId },
-  });
+  let driver: any = null;
 
-  if (!driver || driver.isDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
+  if (authUser.role === Role.SUPER_ADMIN) {
+    if (payload.driverId) {
+      driver = await prisma.driver.findUnique({
+        where: { id: payload.driverId },
+      });
+      if (!driver || driver.isDeleted) {
+        throw new AppError(httpStatus.NOT_FOUND, "Specified driver profile not found");
+      }
+    } else {
+      // Find the first non-deleted driver to attach vehicle to
+      driver = await prisma.driver.findFirst({
+        where: { isDeleted: false },
+      });
+      if (!driver) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          "No registered driver found to assign vehicle to. Please create a driver first.",
+        );
+      }
+    }
+  } else {
+    driver = await prisma.driver.findUnique({
+      where: { userId: authUser.userId },
+    });
+
+    if (!driver || driver.isDeleted) {
+      throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
+    }
   }
 
   // Check if vehicleNumber is unique
@@ -33,6 +57,8 @@ const createVehicle = async (
       `Vehicle with registration number '${payload.vehicleNumber}' already exists.`,
     );
   }
+
+  const isAdmin = authUser.role === Role.SUPER_ADMIN;
 
   const result = await prisma.$transaction(async (tx) => {
     const vehicle = await tx.vehicle.create({
@@ -54,7 +80,11 @@ const createVehicle = async (
         hasDefibrillator: payload.hasDefibrillator ?? false,
         hasSuctionMachine: payload.hasSuctionMachine ?? false,
         equipmentDetails: payload.equipmentDetails,
-        verificationStatus: VehicleVerificationStatus.PENDING,
+        verificationStatus: isAdmin
+          ? VehicleVerificationStatus.APPROVED
+          : VehicleVerificationStatus.PENDING,
+        verifiedById: isAdmin ? authUser.userId : null,
+        verifiedAt: isAdmin ? new Date() : null,
       },
     });
 

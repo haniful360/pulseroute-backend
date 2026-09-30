@@ -60,9 +60,41 @@ const deleteNotification = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const broadcastAnnouncement = catchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as IRequestUser;
+    const result = await NotificationService.broadcastAnnouncement(
+      user,
+      req.body,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: result.messageText,
+      data: result,
+    });
+  },
+);
+
+const getBroadcastAnnouncements = catchAsync(
+  async (_req: Request, res: Response) => {
+    const result = await NotificationService.getBroadcastAnnouncements();
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Broadcast announcements retrieved successfully",
+      data: result,
+    });
+  },
+);
+
 export const NotificationController = {
   getMyNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  broadcastAnnouncement,
+  getBroadcastAnnouncements,
 };

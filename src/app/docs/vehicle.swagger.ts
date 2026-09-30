@@ -236,9 +236,9 @@ export const vehiclePaths = {
   "/api/v1/vehicles": {
     post: {
       tags: ["Vehicle & Fleet Management"],
-      summary: "Register a New Ambulance (Driver Only)",
+      summary: "Register a New Ambulance (Driver & Super Admin)",
       description:
-        "Allows an authenticated driver to register an ambulance vehicle with equipment details and photo uploads (via multipart/form-data or JSON). Newly created vehicles are placed in PENDING verification status.",
+        "Allows an authenticated driver or Super Admin to register an ambulance vehicle with equipment details and photo uploads (via multipart/form-data or JSON). When created by Super Admin, the vehicle is pre-verified and approved.",
       security: [{ bearerAuth: [] }],
       requestBody: {
         required: true,

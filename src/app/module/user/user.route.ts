@@ -31,6 +31,13 @@ router.patch(
 );
 
 // Admin-only user management endpoints
+router.post(
+  "/",
+  auth(Role.SUPER_ADMIN),
+  validateRequest(UserValidation.createUserSchema),
+  UserController.createUser,
+);
+
 router.get("/", auth(Role.SUPER_ADMIN), UserController.getAllUsers);
 
 router.get("/:id", auth(Role.SUPER_ADMIN), UserController.getUserById);

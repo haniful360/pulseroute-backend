@@ -33,4 +33,17 @@ router.delete(
   NotificationController.deleteNotification,
 );
 
+// Super Admin Fleet & Emergency Broadcasts
+router.post(
+  "/broadcast",
+  auth(Role.SUPER_ADMIN),
+  NotificationController.broadcastAnnouncement,
+);
+
+router.get(
+  "/broadcasts",
+  auth(Role.SUPER_ADMIN),
+  NotificationController.getBroadcastAnnouncements,
+);
+
 export const NotificationRoutes = router;

@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { NotificationType } from "../../../generated/prisma/enums";
+import { NotificationType, Role } from "../../../generated/prisma/enums";
 import AppError from "../../errors/AppError";
 import { prisma } from "../../lib/prisma";
 import { emitNotificationToUser } from "../../lib/socket";
@@ -124,10 +124,120 @@ const deleteNotification = async (authUser: IRequestUser, id: string) => {
   return { message: "Notification deleted successfully" };
 };
 
+const broadcastAnnouncement = async (
+  authUser: IRequestUser,
+  payload: {
+    title: string;
+    message: string;
+    targetAudience?: "ALL" | "DRIVERS" | "USERS";
+    priority?: "NORMAL" | "URGENT" | "CRITICAL";
+  },
+) => {
+  const {
+    title,
+    message,
+    targetAudience = "DRIVERS",
+    priority = "NORMAL",
+  } = payload;
+
+  const userWhere: Record<string, any> = { isDeleted: false };
+  if (targetAudience === "DRIVERS") {
+    userWhere.role = Role.DRIVER;
+  } else if (targetAudience === "USERS") {
+    userWhere.role = Role.USER;
+  }
+
+  const targetUsers = await prisma.user.findMany({
+    where: userWhere,
+    select: { id: true },
+  });
+
+  if (targetUsers.length > 0) {
+    const notificationsData = targetUsers.map((u) => ({
+      userId: u.id,
+      title,
+      message,
+      type:
+        priority === "CRITICAL" || priority === "URGENT"
+          ? NotificationType.EMERGENCY
+          : NotificationType.SYSTEM,
+      metadata: {
+        isBroadcast: true,
+        priority,
+        audience: targetAudience,
+        senderId: authUser.userId,
+      },
+    }));
+
+    await prisma.notification.createMany({
+      data: notificationsData,
+    });
+
+    try {
+      targetUsers.forEach((u) => {
+        emitNotificationToUser(u.id, {
+          title,
+          message,
+          type:
+            priority === "CRITICAL" || priority === "URGENT"
+              ? NotificationType.EMERGENCY
+              : NotificationType.SYSTEM,
+          metadata: { isBroadcast: true, priority, audience: targetAudience },
+          createdAt: new Date(),
+        });
+      });
+    } catch {
+      // non-blocking socket broadcast
+    }
+  }
+
+  return {
+    recipientsCount: targetUsers.length,
+    title,
+    message,
+    targetAudience,
+    priority,
+    sentAt: new Date(),
+    messageText: `Emergency broadcast successfully dispatched to ${targetUsers.length} recipients.`,
+  };
+};
+
+const getBroadcastAnnouncements = async () => {
+  const notifications = await prisma.notification.findMany({
+    where: {
+      type: { in: [NotificationType.SYSTEM, NotificationType.EMERGENCY] },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
+  const seen = new Set();
+  const distinctBroadcasts = [];
+
+  for (const n of notifications) {
+    const meta = n.metadata as any;
+    if (meta?.isBroadcast && !seen.has(n.title)) {
+      seen.add(n.title);
+      distinctBroadcasts.push({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        createdAt: n.createdAt,
+        priority: meta.priority || "Normal",
+        audience: meta.audience || "All Online Drivers",
+      });
+    }
+  }
+
+  return distinctBroadcasts;
+};
+
 export const NotificationService = {
   createNotification,
   getMyNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  broadcastAnnouncement,
+  getBroadcastAnnouncements,
 };

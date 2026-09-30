@@ -1,5 +1,7 @@
+import bcrypt from "bcryptjs";
 import httpStatus from "http-status";
 import {
+  DriverVerificationStatus,
   PaymentStatus,
   Role,
   TripStatus,
@@ -516,7 +518,81 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
   };
 };
 
+const createUser = async (payload: {
+  name: string;
+  email: string;
+  password?: string;
+  role: Role;
+  contactNumber?: string;
+  status?: UserStatus;
+}) => {
+  const existingUser = await prisma.user.findUnique({
+    where: { email: payload.email.toLowerCase() },
+  });
+
+  if (existingUser) {
+    throw new AppError(
+      httpStatus.CONFLICT,
+      "User with this email already exists",
+    );
+  }
+
+  const hashedPassword = await bcrypt.hash(
+    payload.password || "PulseRoute@2025",
+    12,
+  );
+
+  const newUser = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name: payload.name,
+        email: payload.email.toLowerCase(),
+        password: hashedPassword,
+        role: payload.role,
+        contactNumber: payload.contactNumber,
+        status: payload.status || UserStatus.ACTIVE,
+        isEmailVerified: true,
+      },
+    });
+
+    if (payload.role === Role.USER) {
+      await tx.patient.create({
+        data: {
+          userId: user.id,
+          name: payload.name,
+          email: payload.email.toLowerCase(),
+          contactNumber: payload.contactNumber,
+        },
+      });
+    } else if (payload.role === Role.DRIVER) {
+      await tx.driver.create({
+        data: {
+          userId: user.id,
+          name: payload.name,
+          email: payload.email.toLowerCase(),
+          contactNumber: payload.contactNumber || "",
+          verificationStatus: DriverVerificationStatus.APPROVED,
+        },
+      });
+    } else if (payload.role === Role.SUPER_ADMIN) {
+      await tx.admin.create({
+        data: {
+          userId: user.id,
+          name: payload.name,
+          email: payload.email.toLowerCase(),
+          contactNumber: payload.contactNumber,
+        },
+      });
+    }
+
+    return user;
+  });
+
+  return formatUserResponse(newUser);
+};
+
 export const UserService = {
+  createUser,
   getMyProfile,
   getUserDashboardOverview,
   updateMyProfile,
