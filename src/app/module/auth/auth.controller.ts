@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
-import { uploadToCloudinary } from "../../lib/cloudinary";
+import { uploadToCloudinary, uploadBase64OrUrlToCloudinary } from "../../lib/cloudinary";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "./auth.interface";
@@ -98,6 +98,40 @@ const registerDriver = catchAsync(async (req: Request, res: Response) => {
     }
   }
 
+  // Support alias fields if passed in JSON body
+  if (!payload.licensePhotos || payload.licensePhotos.length === 0) {
+    const collectedLicense = [
+      payload.licensePhotoUrl,
+      payload.licenseFront,
+      payload.licenseBack,
+    ].filter(Boolean);
+    if (collectedLicense.length > 0) {
+      payload.licensePhotos = collectedLicense;
+    }
+  }
+
+  if (!payload.nidPhotos || payload.nidPhotos.length === 0) {
+    const collectedNid = [
+      payload.nidPhotoUrl,
+      payload.nidFront,
+      payload.nidBack,
+    ].filter(Boolean);
+    if (collectedNid.length > 0) {
+      payload.nidPhotos = collectedNid;
+    }
+  }
+
+  if (!payload.vehiclePhotos || payload.vehiclePhotos.length === 0) {
+    const collectedVehicles = [
+      payload.vehiclePhotoUrl,
+      payload.vehiclePhoto,
+      ...(Array.isArray(payload.photos) ? payload.photos : [payload.photos]),
+    ].filter(Boolean);
+    if (collectedVehicles.length > 0) {
+      payload.vehiclePhotos = collectedVehicles;
+    }
+  }
+
   // Handle uploaded files (supports single and multiple file uploads)
   const files = req.files as
     | { [fieldname: string]: Express.Multer.File[] }
@@ -118,6 +152,14 @@ const registerDriver = catchAsync(async (req: Request, res: Response) => {
       ...(Array.isArray(payload.licensePhotos) ? payload.licensePhotos : []),
       ...uploadedLicenseUrls,
     ];
+  }
+
+  if (Array.isArray(payload.licensePhotos) && payload.licensePhotos.length > 0) {
+    payload.licensePhotos = await Promise.all(
+      payload.licensePhotos.map((item: string) =>
+        uploadBase64OrUrlToCloudinary(item, "pulseroute/drivers/licenses"),
+      ),
+    );
     payload.licensePhotoUrl = payload.licensePhotos[0];
   }
 
@@ -136,6 +178,14 @@ const registerDriver = catchAsync(async (req: Request, res: Response) => {
       ...(Array.isArray(payload.vehiclePhotos) ? payload.vehiclePhotos : []),
       ...uploadedVehicleUrls,
     ];
+  }
+
+  if (Array.isArray(payload.vehiclePhotos) && payload.vehiclePhotos.length > 0) {
+    payload.vehiclePhotos = await Promise.all(
+      payload.vehiclePhotos.map((item: string) =>
+        uploadBase64OrUrlToCloudinary(item, "pulseroute/vehicles"),
+      ),
+    );
     payload.vehiclePhotoUrl = payload.vehiclePhotos[0];
   }
 
@@ -154,6 +204,14 @@ const registerDriver = catchAsync(async (req: Request, res: Response) => {
       ...(Array.isArray(payload.nidPhotos) ? payload.nidPhotos : []),
       ...uploadedNidUrls,
     ];
+  }
+
+  if (Array.isArray(payload.nidPhotos) && payload.nidPhotos.length > 0) {
+    payload.nidPhotos = await Promise.all(
+      payload.nidPhotos.map((item: string) =>
+        uploadBase64OrUrlToCloudinary(item, "pulseroute/drivers/nid"),
+      ),
+    );
     payload.nidPhotoUrl = payload.nidPhotos[0];
   }
 
@@ -163,28 +221,45 @@ const registerDriver = catchAsync(async (req: Request, res: Response) => {
       files.avatar[0].buffer,
       "pulseroute/avatars",
     );
+  } else if (payload.avatarUrl) {
+    payload.avatarUrl = await uploadBase64OrUrlToCloudinary(
+      payload.avatarUrl,
+      "pulseroute/avatars",
+    );
   }
 
   // Validate mandatory photos (licensePhotos, nidPhotos, vehiclePhotos)
   if (!payload.licensePhotos || payload.licensePhotos.length === 0) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Driving license photo(s) (licensePhotos) are mandatory. Please upload at least one photo of your license.",
-    );
+    if (payload.licensePhotoUrl) {
+      payload.licensePhotos = [payload.licensePhotoUrl];
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Driving license photo(s) (licensePhotos) are mandatory. Please upload at least one photo of your license.",
+      );
+    }
   }
 
   if (!payload.nidPhotos || payload.nidPhotos.length === 0) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "NID photo(s) (nidPhotos) are mandatory. Please upload at least one photo of your NID card.",
-    );
+    if (payload.nidPhotoUrl) {
+      payload.nidPhotos = [payload.nidPhotoUrl];
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "NID photo(s) (nidPhotos) are mandatory. Please upload at least one photo of your NID card.",
+      );
+    }
   }
 
   if (!payload.vehiclePhotos || payload.vehiclePhotos.length === 0) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Vehicle photo(s) (vehiclePhotos) are mandatory. Please upload at least one photo of your vehicle / ambulance.",
-    );
+    if (payload.vehiclePhotoUrl) {
+      payload.vehiclePhotos = [payload.vehiclePhotoUrl];
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Vehicle photo(s) (vehiclePhotos) are mandatory. Please upload at least one photo of your vehicle / ambulance.",
+      );
+    }
   }
 
   const result = await AuthService.registerDriver(payload);

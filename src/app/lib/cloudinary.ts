@@ -49,3 +49,33 @@ export const uploadToCloudinary = (
     uploadStream.end(fileBuffer);
   });
 };
+
+/**
+ * Uploads a base64 string or returns existing URL
+ */
+export const uploadBase64OrUrlToCloudinary = async (
+  fileOrUrl: string,
+  folder = "pulseroute",
+): Promise<string> => {
+  if (!fileOrUrl) return "";
+  if (fileOrUrl.startsWith("http://") || fileOrUrl.startsWith("https://")) {
+    return fileOrUrl;
+  }
+  if (!config.cloudinary_name || !config.cloudinary_api_key || !config.cloudinary_api_secret) {
+    cloudinary.config({
+      cloud_name: config.cloudinary_name,
+      api_key: config.cloudinary_api_key,
+      api_secret: config.cloudinary_api_secret,
+    });
+  }
+  try {
+    const result = await cloudinary.uploader.upload(fileOrUrl, {
+      folder,
+      resource_type: "auto",
+    });
+    return result.secure_url;
+  } catch (err) {
+    console.warn("Cloudinary upload notice (retaining original):", err);
+    return fileOrUrl;
+  }
+};

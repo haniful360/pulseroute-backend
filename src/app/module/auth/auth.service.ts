@@ -231,26 +231,38 @@ const registerUser = async (payload: IRegisterUserPayload) => {
 const registerDriver = async (payload: IRegisterDriverPayload) => {
   const email = payload.email.trim().toLowerCase();
 
-  // Validate mandatory photo uploads
+  // Validate mandatory photo uploads with single URL fallback
   if (!payload.licensePhotos || payload.licensePhotos.length === 0) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Driving license photo(s) (licensePhotos) are mandatory. Please upload at least one photo of your license.",
-    );
+    if (payload.licensePhotoUrl) {
+      payload.licensePhotos = [payload.licensePhotoUrl];
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Driving license photo(s) (licensePhotos) are mandatory. Please upload at least one photo of your license.",
+      );
+    }
   }
 
   if (!payload.nidPhotos || payload.nidPhotos.length === 0) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "NID photo(s) (nidPhotos) are mandatory. Please upload at least one photo of your NID card.",
-    );
+    if (payload.nidPhotoUrl) {
+      payload.nidPhotos = [payload.nidPhotoUrl];
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "NID photo(s) (nidPhotos) are mandatory. Please upload at least one photo of your NID card.",
+      );
+    }
   }
 
   if (!payload.vehiclePhotos || payload.vehiclePhotos.length === 0) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Vehicle photo(s) (vehiclePhotos) are mandatory. Please upload at least one photo of your vehicle / ambulance.",
-    );
+    if (payload.vehiclePhotoUrl) {
+      payload.vehiclePhotos = [payload.vehiclePhotoUrl];
+    } else {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Vehicle photo(s) (vehiclePhotos) are mandatory. Please upload at least one photo of your vehicle / ambulance.",
+      );
+    }
   }
 
   const isUserExists = await prisma.user.findUnique({
