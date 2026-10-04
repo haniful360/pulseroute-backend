@@ -36,7 +36,24 @@ const getMyDriverProfile = async (authUser: IRequestUser) => {
           emailVerified: true,
         },
       },
-      currentVehicle: true,
+      verifiedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      currentVehicle: {
+        include: {
+          verifiedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
       vehicles: true,
       wallet: true,
     },
@@ -116,6 +133,20 @@ const updateMyDriverProfile = async (
       driverUpdateData.experienceYears = Number(payload.experienceYears);
     }
 
+    // If driver was previously REJECTED and is uploading new credentials, reset to PENDING
+    if (
+      driver.verificationStatus === DriverVerificationStatus.REJECTED &&
+      (payload.licenseNumber ||
+        payload.licensePhotoUrl ||
+        (payload.licensePhotos && payload.licensePhotos.length > 0) ||
+        payload.nidNumber ||
+        payload.nidPhotoUrl ||
+        (payload.nidPhotos && payload.nidPhotos.length > 0))
+    ) {
+      driverUpdateData.verificationStatus = DriverVerificationStatus.PENDING;
+      driverUpdateData.rejectionReason = null;
+    }
+
     if (Object.keys(driverUpdateData).length > 0) {
       await tx.driver.update({
         where: { id: driver.id },
@@ -169,6 +200,16 @@ const updateMyDriverProfile = async (
           vehicleUpdateData.hasSuctionMachine = payload.hasSuctionMachine;
         if (payload.equipmentDetails !== undefined)
           vehicleUpdateData.equipmentDetails = payload.equipmentDetails;
+
+        if (
+          driver.currentVehicle?.verificationStatus ===
+            VehicleVerificationStatus.REJECTED &&
+          hasVehiclePayload
+        ) {
+          vehicleUpdateData.verificationStatus =
+            VehicleVerificationStatus.PENDING;
+          vehicleUpdateData.rejectionReason = null;
+        }
 
         await tx.vehicle.update({
           where: { id: driver.currentVehicleId },
