@@ -417,8 +417,25 @@ const getAllDrivers = async (filters: IDriverFilterRequest) => {
         [sortBy]: sortOrder,
       },
       include: {
-        currentVehicle: true,
+        currentVehicle: {
+          include: {
+            verifiedBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
         vehicles: true,
+        verifiedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         wallet: true,
         user: {
           select: {
