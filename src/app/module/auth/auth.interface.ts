@@ -66,6 +66,7 @@ export interface IResetPasswordPayload {
 export interface ILoginUserPayload {
   email: string;
   password: string;
+  role?: Role | "SUPER_ADMIN" | "DRIVER" | "USER";
 }
 
 export interface IGoogleLoginPayload {

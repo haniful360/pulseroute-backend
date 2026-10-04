@@ -890,13 +890,15 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
     throw new AppError(httpStatus.NOT_FOUND, "User could not be authenticated");
   }
 
-  // Send login welcome email with login details
-  await sendLoginWelcomeEmail(
+  // Send login welcome email in background (non-blocking)
+  sendLoginWelcomeEmail(
     user.email,
     user.name,
     user.role,
     "Google Sign-In",
-  );
+  ).catch((err) => {
+    console.error("Failed to send Google login welcome email:", err);
+  });
 
   // Extract dynamic profile
   let profile = null;
@@ -1004,13 +1006,25 @@ const loginUser = async (payload: ILoginUserPayload) => {
     throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password");
   }
 
-  // Send login welcome email with login details
-  await sendLoginWelcomeEmail(
+  // Enforce specific role requirement if specified (e.g. SUPER_ADMIN portal)
+  if (payload.role && user.role !== payload.role) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      payload.role === Role.SUPER_ADMIN
+        ? "Access Denied: Only Super Administrators can log in through this portal."
+        : `Access Denied: This portal is restricted to ${payload.role} accounts only.`,
+    );
+  }
+
+  // Send login welcome email in background (non-blocking)
+  sendLoginWelcomeEmail(
     user.email,
     user.name,
     user.role,
     "Email & Password",
-  );
+  ).catch((err) => {
+    console.error("Failed to send login welcome email:", err);
+  });
 
   // Extract relevant profile dynamically based on user role
   let profile = null;

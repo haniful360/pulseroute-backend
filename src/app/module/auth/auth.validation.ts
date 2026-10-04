@@ -128,6 +128,7 @@ const loginUserSchema = z.object({
   password: z
     .string({ message: "Password is required" })
     .min(1, "Password cannot be empty"),
+  role: z.enum(["SUPER_ADMIN", "DRIVER", "USER"]).optional(),
 });
 
 // 6. Forgot Password
