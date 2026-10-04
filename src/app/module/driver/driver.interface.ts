@@ -2,6 +2,7 @@ import {
   AmbulanceType,
   DriverVerificationStatus,
   DutyStatus,
+  VehicleVerificationStatus,
 } from "../../../generated/prisma/enums";
 
 export interface IUpdateDriverProfilePayload {
@@ -44,6 +45,7 @@ export interface IUpdateLocationPayload {
 
 export interface IVerifyDriverPayload {
   status: DriverVerificationStatus;
+  vehicleStatus?: VehicleVerificationStatus;
   reason?: string;
 }
 

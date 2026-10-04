@@ -377,7 +377,18 @@ const getAllDrivers = async (filters: IDriverFilterRequest) => {
       },
       include: {
         currentVehicle: true,
+        vehicles: true,
         wallet: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            avatarUrl: true,
+            status: true,
+          },
+        },
       },
     }),
     prisma.driver.count({
@@ -538,6 +549,7 @@ const verifyDriver = async (
     },
     include: {
       currentVehicle: true,
+      vehicles: true,
       user: {
         select: {
           id: true,
@@ -550,7 +562,65 @@ const verifyDriver = async (
     },
   });
 
-  return updatedDriver;
+  // Synchronize Vehicle Verification Status
+  const vehicleStatusToSet =
+    payload.vehicleStatus ||
+    (payload.status === DriverVerificationStatus.APPROVED
+      ? VehicleVerificationStatus.APPROVED
+      : payload.status === DriverVerificationStatus.REJECTED ||
+        payload.status === DriverVerificationStatus.SUSPENDED
+      ? VehicleVerificationStatus.REJECTED
+      : VehicleVerificationStatus.PENDING);
+
+  // 1. Update current vehicle if assigned
+  if (driver.currentVehicleId) {
+    await prisma.vehicle.update({
+      where: { id: driver.currentVehicleId },
+      data: {
+        verificationStatus: vehicleStatusToSet,
+        verifiedById: adminUser.userId,
+        verifiedAt: new Date(),
+        rejectionReason:
+          vehicleStatusToSet === VehicleVerificationStatus.REJECTED
+            ? payload.reason || "Vehicle verification rejected"
+            : null,
+      },
+    });
+  }
+
+  // 2. Also update all vehicles owned by this driver
+  await prisma.vehicle.updateMany({
+    where: { driverId: driver.id },
+    data: {
+      verificationStatus: vehicleStatusToSet,
+      verifiedById: adminUser.userId,
+      verifiedAt: new Date(),
+      rejectionReason:
+        vehicleStatusToSet === VehicleVerificationStatus.REJECTED
+          ? payload.reason || "Vehicle verification rejected"
+          : null,
+    },
+  });
+
+  // Re-fetch to return latest updated state with refreshed vehicle statuses
+  const refreshedDriver = await prisma.driver.findUnique({
+    where: { id: driver.id },
+    include: {
+      currentVehicle: true,
+      vehicles: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  return refreshedDriver || updatedDriver;
 };
 
 const getDriverDashboardOverview = async (authUser: IRequestUser) => {

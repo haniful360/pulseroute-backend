@@ -3,6 +3,7 @@ import {
   AmbulanceType,
   DriverVerificationStatus,
   DutyStatus,
+  VehicleVerificationStatus,
 } from "../../../generated/prisma/enums";
 
 const updateDriverProfileSchema = z.object({
@@ -110,6 +111,13 @@ const verifyDriverSchema = z.object({
     DriverVerificationStatus.SUSPENDED,
     DriverVerificationStatus.PENDING,
   ]),
+  vehicleStatus: z
+    .enum([
+      VehicleVerificationStatus.APPROVED,
+      VehicleVerificationStatus.REJECTED,
+      VehicleVerificationStatus.PENDING,
+    ])
+    .optional(),
   reason: z.string().optional(),
 });
 

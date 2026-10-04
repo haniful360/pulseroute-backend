@@ -1074,7 +1074,7 @@ const loginUser = async (payload: ILoginUserPayload) => {
     user: sanitizedUser,
     accessToken,
     refreshToken,
-    welcomeMessage: `Welcome back, ${user.name}! Logged in successfully as ${roleTitle}.`,
+    welcomeMessage: `${user.name}! Logged in successfully as ${roleTitle}.`,
   };
 };
 
