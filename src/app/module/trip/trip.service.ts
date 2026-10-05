@@ -177,6 +177,19 @@ const createTripRequest = async (
       });
     }
 
+    // Fallback 2: If still no online driver, dispatch to any approved drivers so emergency requests are never unassigned
+    if (onlineDrivers.length === 0) {
+      onlineDrivers = await tx.driver.findMany({
+        where: {
+          verificationStatus: DriverVerificationStatus.APPROVED,
+          isDeleted: false,
+        },
+        include: {
+          currentVehicle: true,
+        },
+      });
+    }
+
     // Compute distance to pickup for each driver (fallback to pickup vicinity if GPS coordinates are null)
     const eligibleDrivers = onlineDrivers
       .map((driver) => {
@@ -325,13 +338,6 @@ const acceptDispatchOffer = async (authUser: IRequestUser, offerId: string) => {
 
   if (!driver || driver.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, "Driver profile not found");
-  }
-
-  if (driver.dutyStatus !== DutyStatus.ONLINE) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "You cannot accept an offer while your duty status is not ONLINE",
-    );
   }
 
   // Atomic transaction to guarantee single driver acceptance
