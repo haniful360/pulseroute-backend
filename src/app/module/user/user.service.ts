@@ -571,6 +571,9 @@ const createUser = async (payload: {
           name: payload.name,
           email: payload.email.toLowerCase(),
           contactNumber: payload.contactNumber || "",
+          licenseNumber:
+            (payload as any).licenseNumber ||
+            `DL-${user.id.slice(0, 8).toUpperCase()}`,
           verificationStatus: DriverVerificationStatus.APPROVED,
         },
       });

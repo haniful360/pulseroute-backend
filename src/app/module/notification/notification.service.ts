@@ -157,10 +157,7 @@ const broadcastAnnouncement = async (
       userId: u.id,
       title,
       message,
-      type:
-        priority === "CRITICAL" || priority === "URGENT"
-          ? NotificationType.EMERGENCY
-          : NotificationType.SYSTEM,
+      type: NotificationType.SYSTEM,
       metadata: {
         isBroadcast: true,
         priority,
@@ -178,10 +175,7 @@ const broadcastAnnouncement = async (
         emitNotificationToUser(u.id, {
           title,
           message,
-          type:
-            priority === "CRITICAL" || priority === "URGENT"
-              ? NotificationType.EMERGENCY
-              : NotificationType.SYSTEM,
+          type: NotificationType.SYSTEM,
           metadata: { isBroadcast: true, priority, audience: targetAudience },
           createdAt: new Date(),
         });
@@ -205,7 +199,7 @@ const broadcastAnnouncement = async (
 const getBroadcastAnnouncements = async () => {
   const notifications = await prisma.notification.findMany({
     where: {
-      type: { in: [NotificationType.SYSTEM, NotificationType.EMERGENCY] },
+      type: NotificationType.SYSTEM,
     },
     orderBy: { createdAt: "desc" },
     take: 100,

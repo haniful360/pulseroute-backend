@@ -92,8 +92,10 @@ const generateInvoiceForTrip = async (tripId: string) => {
 };
 
 const getInvoiceById = async (authUser: IRequestUser, id: string) => {
-  const invoice = await prisma.invoice.findUnique({
-    where: { id },
+  let invoice = await prisma.invoice.findFirst({
+    where: {
+      OR: [{ id }, { tripId: id }],
+    },
     include: {
       trip: true,
       patient: {
@@ -115,6 +117,39 @@ const getInvoiceById = async (authUser: IRequestUser, id: string) => {
       paymentRecords: true,
     },
   });
+
+  if (!invoice) {
+    const trip = await prisma.trip.findUnique({
+      where: { id },
+      include: { driver: true },
+    });
+    if (trip && trip.driverId) {
+      await generateInvoiceForTrip(trip.id);
+      invoice = await prisma.invoice.findUnique({
+        where: { tripId: trip.id },
+        include: {
+          trip: true,
+          patient: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              contactNumber: true,
+            },
+          },
+          driver: {
+            select: {
+              id: true,
+              name: true,
+              contactNumber: true,
+              licenseNumber: true,
+            },
+          },
+          paymentRecords: true,
+        },
+      });
+    }
+  }
 
   if (!invoice) {
     throw new AppError(httpStatus.NOT_FOUND, "Invoice not found");
@@ -322,10 +357,15 @@ const exportInvoicesAudit = async (query: {
 
 const exportInvoiceReceipt = async (
   authUser: IRequestUser,
-  invoiceId: string,
+  invoiceIdOrTripId: string,
 ) => {
-  const invoice = await prisma.invoice.findUnique({
-    where: { id: invoiceId },
+  let invoice = await prisma.invoice.findFirst({
+    where: {
+      OR: [
+        { id: invoiceIdOrTripId },
+        { tripId: invoiceIdOrTripId },
+      ],
+    },
     include: {
       trip: {
         include: {
@@ -338,8 +378,40 @@ const exportInvoiceReceipt = async (
     },
   });
 
+  // If no invoice found yet, attempt to find by trip and auto-generate invoice
+  if (!invoice) {
+    const trip = await prisma.trip.findFirst({
+      where: {
+        OR: [
+          { id: invoiceIdOrTripId },
+          { tripCode: invoiceIdOrTripId },
+        ],
+      },
+      include: {
+        driver: true,
+      },
+    });
+
+    if (trip && trip.driverId) {
+      await generateInvoiceForTrip(trip.id);
+      invoice = await prisma.invoice.findUnique({
+        where: { tripId: trip.id },
+        include: {
+          trip: {
+            include: {
+              patient: true,
+              driver: true,
+              vehicle: true,
+            },
+          },
+          paymentRecords: true,
+        },
+      });
+    }
+  }
+
   if (!invoice || !invoice.trip) {
-    throw new AppError(httpStatus.NOT_FOUND, "Invoice not found");
+    throw new AppError(httpStatus.NOT_FOUND, "Invoice not found for this emergency trip");
   }
 
   const isPatient = invoice.trip.patient.userId === authUser.userId;

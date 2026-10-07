@@ -837,6 +837,7 @@ const getMyTrips = async (authUser: IRequestUser) => {
           },
         },
         vehicle: true,
+        invoice: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -858,6 +859,7 @@ const getMyTrips = async (authUser: IRequestUser) => {
           },
         },
         vehicle: true,
+        invoice: true,
       },
       orderBy: { createdAt: "desc" },
     });
