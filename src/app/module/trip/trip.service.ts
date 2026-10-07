@@ -686,7 +686,13 @@ const updateTripStatus = async (
     if (patient) {
       let title = `Trip Update: ${result.status}`;
       let message = `Your emergency trip status is now ${result.status}.`;
-      if (result.status === TripStatus.ARRIVED) {
+      if (result.status === TripStatus.ACCEPTED) {
+        title = "🚑 Ambulance Assigned!";
+        message = `A crew has accepted your request and is preparing for dispatch.`;
+      } else if (result.status === TripStatus.EN_ROUTE) {
+        title = "🚑 Ambulance En Route!";
+        message = `The ambulance is heading towards your pickup location (${result.pickupAddress}).`;
+      } else if (result.status === TripStatus.ARRIVED) {
         title = "🚑 Ambulance Arrived!";
         message = `The ambulance has arrived at ${result.pickupAddress}.`;
       } else if (result.status === TripStatus.IN_TRANSIT) {
@@ -695,6 +701,9 @@ const updateTripStatus = async (
       } else if (result.status === TripStatus.COMPLETED) {
         title = "✅ Trip Completed";
         message = `Emergency trip completed safely. Your invoice is now ready for review and payment.`;
+      } else if (result.status === TripStatus.CANCELLED) {
+        title = "⚠️ Trip Cancelled";
+        message = `Your emergency ambulance trip has been cancelled.`;
       }
 
       await NotificationService.createNotification({
@@ -702,7 +711,7 @@ const updateTripStatus = async (
         title,
         message,
         type: NotificationType.TRIP,
-        link: `/trips/${result.id}`,
+        link: `/dashboard/patient/active-trip?tripId=${result.id}`,
         metadata: { tripId: result.id, status: result.status },
       });
     }
