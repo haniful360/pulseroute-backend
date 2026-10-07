@@ -445,7 +445,7 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
     // Total spent
     prisma.invoice.aggregate({
       where: { patientId: patient.id, paymentStatus: PaymentStatus.PAID },
-      _sum: { paidAmount: true },
+      _sum: { paidAmount: true, totalAmount: true },
     }),
 
     // Unpaid invoices
@@ -472,11 +472,27 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
         driver: { select: { name: true, contactNumber: true, rating: true } },
         vehicle: { select: { ambulanceType: true, vehicleNumber: true } },
         invoice: {
-          select: { id: true, totalAmount: true, paymentStatus: true },
+          select: { id: true, totalAmount: true, paymentStatus: true, paidAmount: true },
         },
       },
     }),
   ]);
+
+  // Total spent calculation (handles both paidAmount and totalAmount)
+  const paidSum = Number(spentAgg._sum.paidAmount || 0);
+  const totalAmountSum = Number(spentAgg._sum.totalAmount || 0);
+  const totalSpent = paidSum > 0 ? paidSum : totalAmountSum;
+
+  // Format recent trips with explicit numerical fare
+  const formattedRecentTrips = recentTrips.map((trip) => {
+    const tripFare = Number(
+      trip.invoice?.totalAmount ?? trip.invoice?.paidAmount ?? trip.estimatedFare ?? 0
+    );
+    return {
+      ...trip,
+      fare: tripFare,
+    };
+  });
 
   // Health profile completeness calculation
   let completenessScore = 0;
@@ -510,11 +526,24 @@ const getUserDashboardOverview = async (authUser: IRequestUser) => {
     stats: {
       totalTripsBooked: totalTripsCount,
       completedTrips: completedTripsCount,
-      totalSpent: Number(spentAgg._sum.paidAmount || 0),
+      totalSpent,
       unpaidInvoicesCount: unpaidInvoices.length,
     },
+    // Top-level aliases for direct frontend access
+    activeTrip,
+    totalTripsCount,
+    completedTripsCount,
+    totalSpent,
+    totalSettled: totalSpent,
+    spentAgg: {
+      _sum: {
+        paidAmount: totalSpent,
+        totalAmount: totalAmountSum,
+      },
+    },
+    completenessScore,
     unpaidInvoices,
-    recentTrips,
+    recentTrips: formattedRecentTrips,
   };
 };
 

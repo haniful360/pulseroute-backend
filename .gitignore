@@ -18,3 +18,4 @@ temp_interactive_push.bat
 branch_structure.json
 free-port-5000.bat
 nul
+.gitignore
