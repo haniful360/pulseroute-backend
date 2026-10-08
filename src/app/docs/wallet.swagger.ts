@@ -1,7 +1,7 @@
 export const walletSchemas = {
   CreatePayoutRequest: {
     type: "object",
-    required: ["amount", "paymentMethod", "accountNumber"],
+    required: ["amount"],
     properties: {
       amount: {
         type: "number",

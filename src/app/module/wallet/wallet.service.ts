@@ -1,5 +1,6 @@
 import httpStatus from "http-status";
 import {
+  PaymentMethod,
   PayoutStatus,
   TransactionDirection,
   TransactionStatus,
@@ -197,14 +198,24 @@ const createPayoutRequest = async (
     );
   }
 
+  const resolvedAccountNumber =
+    payload.accountNumber?.trim() ||
+    driver.contactNumber ||
+    "STRIPE-CHASE-4242";
+
+  const resolvedAccountDetails =
+    payload.accountDetails?.trim() ||
+    payload.notes?.trim() ||
+    "Chase Bank •••• 4242 (Stripe Connected Express Account)";
+
   const payout = await prisma.payoutRequest.create({
     data: {
       driverId: driver.id,
       walletId: wallet.id,
       amount: payload.amount,
-      paymentMethod: payload.paymentMethod,
-      accountNumber: payload.accountNumber,
-      accountDetails: payload.accountDetails,
+      paymentMethod: payload.paymentMethod || PaymentMethod.STRIPE,
+      accountNumber: resolvedAccountNumber,
+      accountDetails: resolvedAccountDetails,
       status: PayoutStatus.REQUESTED,
     },
   });

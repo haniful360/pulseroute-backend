@@ -6,9 +6,10 @@ import {
 
 export interface ICreatePayoutRequestPayload {
   amount: number;
-  paymentMethod: PaymentMethod;
-  accountNumber: string;
+  paymentMethod?: PaymentMethod;
+  accountNumber?: string;
   accountDetails?: string;
+  notes?: string;
 }
 
 export interface IProcessPayoutPayload {
