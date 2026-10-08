@@ -78,6 +78,14 @@ const updateMyProfile = async (
     throw new AppError(httpStatus.NOT_FOUND, "User not found or deleted");
   }
 
+  // Flatten nested patient data if provided
+  if (payload.patient && typeof payload.patient === "object") {
+    payload = {
+      ...payload.patient,
+      ...payload,
+    };
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     // 1. Update basic User fields if present
     const userUpdateData: {
@@ -85,9 +93,17 @@ const updateMyProfile = async (
       phone?: string;
       avatarUrl?: string;
     } = {};
-    if (payload.name) userUpdateData.name = payload.name;
-    if (payload.phone) userUpdateData.phone = payload.phone;
-    if (payload.avatarUrl) userUpdateData.avatarUrl = payload.avatarUrl;
+    if (payload.name !== undefined && payload.name !== null) userUpdateData.name = payload.name;
+    if (payload.phone !== undefined && payload.phone !== null) {
+      userUpdateData.phone = payload.phone;
+    } else if (payload.contactNumber !== undefined && payload.contactNumber !== null) {
+      userUpdateData.phone = payload.contactNumber;
+    }
+    if (payload.avatarUrl !== undefined && payload.avatarUrl !== null) {
+      userUpdateData.avatarUrl = payload.avatarUrl;
+    } else if (payload.profilePhoto !== undefined && payload.profilePhoto !== null) {
+      userUpdateData.avatarUrl = payload.profilePhoto;
+    }
 
     if (Object.keys(userUpdateData).length > 0) {
       await tx.user.update({
@@ -98,35 +114,63 @@ const updateMyProfile = async (
 
     // 2. Update role-specific profile
     if (user.role === Role.USER) {
+      // Parse dateOfBirth cleanly
+      let parsedDob: Date | null | undefined = undefined;
+      if (payload.dateOfBirth !== undefined) {
+        if (!payload.dateOfBirth) {
+          parsedDob = null;
+        } else {
+          const d = new Date(payload.dateOfBirth);
+          if (!isNaN(d.getTime())) {
+            parsedDob = d;
+          }
+        }
+      }
+
+      // Format medical history
+      let medicalHistoryStr: string | null | undefined = undefined;
+      if (payload.medicalHistory !== undefined) {
+        if (payload.medicalHistory === null) {
+          medicalHistoryStr = null;
+        } else if (typeof payload.medicalHistory === "object") {
+          medicalHistoryStr = JSON.stringify(payload.medicalHistory);
+        } else {
+          medicalHistoryStr = String(payload.medicalHistory);
+        }
+      }
+
+      const patientUpdateData: Record<string, any> = {};
+      if (payload.name !== undefined) patientUpdateData.name = payload.name;
+      if (payload.phone !== undefined || payload.contactNumber !== undefined) {
+        patientUpdateData.contactNumber = payload.phone ?? payload.contactNumber;
+      }
+      if (payload.address !== undefined) patientUpdateData.address = payload.address;
+      if (payload.emergencyContactNumber !== undefined) {
+        patientUpdateData.emergencyContactNumber = payload.emergencyContactNumber;
+      }
+      if (payload.bloodGroup !== undefined) patientUpdateData.bloodGroup = payload.bloodGroup;
+      if (payload.gender !== undefined) patientUpdateData.gender = payload.gender;
+      if (parsedDob !== undefined) patientUpdateData.dateOfBirth = parsedDob;
+      if (medicalHistoryStr !== undefined) patientUpdateData.medicalHistory = medicalHistoryStr;
+      if (payload.avatarUrl !== undefined || payload.profilePhoto !== undefined) {
+        patientUpdateData.profilePhoto = payload.avatarUrl ?? payload.profilePhoto;
+      }
+
       await tx.patient.upsert({
         where: { userId: user.id },
-        update: {
-          name: payload.name ?? undefined,
-          contactNumber: payload.phone ?? payload.contactNumber ?? undefined,
-          address: payload.address ?? undefined,
-          emergencyContactNumber: payload.emergencyContactNumber ?? undefined,
-          bloodGroup: payload.bloodGroup ?? undefined,
-          gender: payload.gender ?? undefined,
-          dateOfBirth: payload.dateOfBirth
-            ? new Date(payload.dateOfBirth)
-            : undefined,
-          medicalHistory: payload.medicalHistory ?? undefined,
-          profilePhoto: payload.avatarUrl ?? payload.profilePhoto ?? undefined,
-        },
+        update: patientUpdateData,
         create: {
           userId: user.id,
           name: payload.name ?? user.name,
           email: user.email,
-          contactNumber: payload.phone ?? payload.contactNumber,
-          address: payload.address,
-          emergencyContactNumber: payload.emergencyContactNumber,
-          bloodGroup: payload.bloodGroup,
-          gender: payload.gender,
-          dateOfBirth: payload.dateOfBirth
-            ? new Date(payload.dateOfBirth)
-            : undefined,
-          medicalHistory: payload.medicalHistory,
-          profilePhoto: payload.avatarUrl ?? payload.profilePhoto,
+          contactNumber: payload.phone ?? payload.contactNumber ?? user.phone,
+          address: payload.address ?? null,
+          emergencyContactNumber: payload.emergencyContactNumber ?? null,
+          bloodGroup: payload.bloodGroup ?? null,
+          gender: payload.gender ?? null,
+          dateOfBirth: parsedDob ?? null,
+          medicalHistory: medicalHistoryStr ?? null,
+          profilePhoto: payload.avatarUrl ?? payload.profilePhoto ?? user.avatarUrl,
         },
       });
     } else if (user.role === Role.DRIVER) {

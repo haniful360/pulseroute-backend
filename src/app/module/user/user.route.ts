@@ -25,7 +25,10 @@ router.get(
 router.patch(
   "/profile",
   auth(Role.SUPER_ADMIN, Role.DRIVER, Role.USER),
-  upload.single("avatar"),
+  upload.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "profilePhoto", maxCount: 1 },
+  ]),
   validateRequest(UserValidation.updateProfileSchema),
   UserController.updateMyProfile,
 );

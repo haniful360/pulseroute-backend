@@ -4,26 +4,31 @@ export interface IUpdateProfilePayload {
   // Common user fields
   name?: string;
   phone?: string;
-  avatarUrl?: string;
+  contactNumber?: string;
+  avatarUrl?: string | null;
 
   // Patient profile fields
-  address?: string;
-  emergencyContactNumber?: string;
-  bloodGroup?: string;
-  gender?: Gender;
-  dateOfBirth?: string | Date;
-  medicalHistory?: string;
-  profilePhoto?: string;
+  address?: string | null;
+  emergencyContactNumber?: string | null;
+  bloodGroup?: string | null;
+  gender?: Gender | null;
+  dateOfBirth?: string | Date | null;
+  medicalHistory?: string | Record<string, any> | any[] | null;
+  profilePhoto?: string | null;
 
   // Driver profile fields
-  contactNumber?: string;
-  nidNumber?: string;
-  licenseExpiry?: string | Date;
-  experienceYears?: number;
+  nidNumber?: string | null;
+  licenseExpiry?: string | Date | null;
+  experienceYears?: number | null;
 
   // Admin profile fields
-  orgEmail?: string;
-  department?: string;
+  orgEmail?: string | null;
+  department?: string | null;
+
+  // Nested payloads
+  patient?: Record<string, any>;
+  driver?: Record<string, any>;
+  admin?: Record<string, any>;
 }
 
 export interface IUserFilterRequest {

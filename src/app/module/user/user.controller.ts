@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
-import { uploadToCloudinary } from "../../lib/cloudinary";
+import {
+  uploadToCloudinary,
+  uploadBase64OrUrlToCloudinary,
+} from "../../lib/cloudinary";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "../auth/auth.interface";
@@ -44,12 +47,32 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
     }
   }
 
-  // Handle avatar upload if present
-  if (req.file) {
-    payload.avatarUrl = await uploadToCloudinary(
-      req.file.buffer,
+  // Handle avatar or profilePhoto upload if present
+  const files = req.files as
+    | { [fieldname: string]: Express.Multer.File[] }
+    | undefined;
+  const file = req.file || files?.avatar?.[0] || files?.profilePhoto?.[0];
+  if (file) {
+    const uploadedUrl = await uploadToCloudinary(
+      file.buffer,
       "pulseroute/avatars",
     );
+    payload.avatarUrl = uploadedUrl;
+    payload.profilePhoto = uploadedUrl;
+  } else if (payload.avatarUrl && typeof payload.avatarUrl === "string" && payload.avatarUrl.startsWith("data:image")) {
+    const uploadedUrl = await uploadBase64OrUrlToCloudinary(
+      payload.avatarUrl,
+      "pulseroute/avatars",
+    );
+    payload.avatarUrl = uploadedUrl;
+    payload.profilePhoto = uploadedUrl;
+  } else if (payload.profilePhoto && typeof payload.profilePhoto === "string" && payload.profilePhoto.startsWith("data:image")) {
+    const uploadedUrl = await uploadBase64OrUrlToCloudinary(
+      payload.profilePhoto,
+      "pulseroute/avatars",
+    );
+    payload.avatarUrl = uploadedUrl;
+    payload.profilePhoto = uploadedUrl;
   }
 
   const result = await UserService.updateMyProfile(user, payload);

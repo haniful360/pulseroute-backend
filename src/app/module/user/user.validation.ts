@@ -17,31 +17,36 @@ const createUserSchema = z.object({
 
 const updateProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100).optional(),
-  phone: z.string().optional(),
-  contactNumber: z.string().optional(),
-  avatarUrl: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  contactNumber: z.string().optional().nullable(),
+  avatarUrl: z.string().optional().nullable(),
   
   // Patient fields
-  address: z.string().optional(),
-  emergencyContactNumber: z.string().optional(),
-  bloodGroup: z.string().optional(),
-  gender: z.enum([Gender.MALE, Gender.FEMALE, Gender.OTHER]).optional(),
-  dateOfBirth: z.string().optional(),
-  medicalHistory: z.string().optional(),
-  profilePhoto: z.string().optional(),
+  address: z.string().optional().nullable(),
+  emergencyContactNumber: z.string().optional().nullable(),
+  bloodGroup: z.string().optional().nullable(),
+  gender: z.enum([Gender.MALE, Gender.FEMALE, Gender.OTHER]).optional().nullable(),
+  dateOfBirth: z.union([z.string(), z.date()]).optional().nullable(),
+  medicalHistory: z.union([z.string(), z.record(z.string(), z.any()), z.array(z.any())]).optional().nullable(),
+  profilePhoto: z.string().optional().nullable(),
 
   // Driver fields
-  nidNumber: z.string().optional(),
-  licenseExpiry: z.string().optional(),
+  nidNumber: z.string().optional().nullable(),
+  licenseExpiry: z.string().optional().nullable(),
   experienceYears: z
     .preprocess(
-      (val) => (val !== undefined && val !== "" ? Number(val) : undefined),
+      (val) => (val !== undefined && val !== "" && val !== null ? Number(val) : undefined),
       z.number().int().nonnegative().optional(),
     ),
 
   // Admin fields
-  orgEmail: z.string().email("Invalid email format").optional(),
-  department: z.string().optional(),
+  orgEmail: z.string().email("Invalid email format").optional().nullable(),
+  department: z.string().optional().nullable(),
+
+  // Nested payloads
+  patient: z.record(z.string(), z.any()).optional(),
+  driver: z.record(z.string(), z.any()).optional(),
+  admin: z.record(z.string(), z.any()).optional(),
 });
 
 const updateUserStatusSchema = z.object({
