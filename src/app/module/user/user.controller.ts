@@ -59,14 +59,14 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
     );
     payload.avatarUrl = uploadedUrl;
     payload.profilePhoto = uploadedUrl;
-  } else if (payload.avatarUrl && typeof payload.avatarUrl === "string" && payload.avatarUrl.startsWith("data:image")) {
+  } else if (payload.avatarUrl && typeof payload.avatarUrl === "string" && payload.avatarUrl.startsWith("data:")) {
     const uploadedUrl = await uploadBase64OrUrlToCloudinary(
       payload.avatarUrl,
       "pulseroute/avatars",
     );
     payload.avatarUrl = uploadedUrl;
     payload.profilePhoto = uploadedUrl;
-  } else if (payload.profilePhoto && typeof payload.profilePhoto === "string" && payload.profilePhoto.startsWith("data:image")) {
+  } else if (payload.profilePhoto && typeof payload.profilePhoto === "string" && payload.profilePhoto.startsWith("data:")) {
     const uploadedUrl = await uploadBase64OrUrlToCloudinary(
       payload.profilePhoto,
       "pulseroute/avatars",

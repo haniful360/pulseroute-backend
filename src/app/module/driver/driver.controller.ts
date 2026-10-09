@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
-import { uploadToCloudinary } from "../../lib/cloudinary";
+import { uploadToCloudinary, uploadBase64OrUrlToCloudinary } from "../../lib/cloudinary";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "../auth/auth.interface";
@@ -94,6 +94,32 @@ const updateMyDriverProfile = catchAsync(
       payload.avatarUrl = await uploadToCloudinary(
         files.avatar[0].buffer,
         "pulseroute/avatars",
+      );
+    }
+
+    // 5. Convert base64 data URLs in payload to Cloudinary URLs if provided via JSON
+    if (payload.avatarUrl && typeof payload.avatarUrl === "string" && payload.avatarUrl.startsWith("data:")) {
+      payload.avatarUrl = await uploadBase64OrUrlToCloudinary(
+        payload.avatarUrl,
+        "pulseroute/avatars",
+      );
+    }
+    if (payload.licensePhotoUrl && typeof payload.licensePhotoUrl === "string" && payload.licensePhotoUrl.startsWith("data:")) {
+      payload.licensePhotoUrl = await uploadBase64OrUrlToCloudinary(
+        payload.licensePhotoUrl,
+        "pulseroute/drivers/licenses",
+      );
+    }
+    if (payload.nidPhotoUrl && typeof payload.nidPhotoUrl === "string" && payload.nidPhotoUrl.startsWith("data:")) {
+      payload.nidPhotoUrl = await uploadBase64OrUrlToCloudinary(
+        payload.nidPhotoUrl,
+        "pulseroute/drivers/nid",
+      );
+    }
+    if (payload.vehiclePhotoUrl && typeof payload.vehiclePhotoUrl === "string" && payload.vehiclePhotoUrl.startsWith("data:")) {
+      payload.vehiclePhotoUrl = await uploadBase64OrUrlToCloudinary(
+        payload.vehiclePhotoUrl,
+        "pulseroute/vehicles",
       );
     }
 
