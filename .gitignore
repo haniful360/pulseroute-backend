@@ -1,6 +1,4 @@
 node_modules
-.env
-.env.*
 !.env.example
 dist
 .vercel
@@ -19,3 +17,4 @@ branch_structure.json
 free-port-5000.bat
 nul
 .gitignore
+config.bat
