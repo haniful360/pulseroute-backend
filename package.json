@@ -5,11 +5,11 @@
   "description": "PulseRoute \u2014 Emergency Ambulance Dispatch Platform Backend",
   "main": "index.js",
   "scripts": {
-    "dev": "node api.js && tsx watch src/server.ts",
-    "build": "node api.js && tsup",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsup",
     "vercel-build": "prisma generate && tsup",
     "build:tsc": "tsc",
-    "start": "node api.js && node dist/server.js",
+    "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
